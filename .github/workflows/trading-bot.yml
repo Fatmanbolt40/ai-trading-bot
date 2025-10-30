@@ -1,0 +1,46 @@
+name: Crypto Trading Bot 24/7
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger
+  push:
+    branches: [ main ]
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run trading bot
+      env:
+        KRAKEN_API_KEY: ${{ secrets.KRAKEN_API_KEY }}
+        KRAKEN_API_SECRET: ${{ secrets.KRAKEN_API_SECRET }}
+        USE_REAL_MONEY: true
+        USE_FUTURES: true
+      run: |
+        echo "🤖 Starting Crypto Trading Bot..."
+        timeout 480 node paper-trading-ai.js || echo "✅ Bot cycle completed"
+        
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: trading-logs
+        path: |
+          ai-log.txt
+          paper-trading-state.json
+        retention-days: 7
