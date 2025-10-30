@@ -2081,12 +2081,13 @@ class WorldClassTradingAI {
                 };
                 console.log('💼 Wallets synced: Main $' + this.wallets.main.toFixed(2) + ' | Trading $' + this.wallets.trading.toFixed(2));
                 
-                // 💎 ENFORCE PROFIT TARGETS - 1.4% for quick gains
-                this.settings.minProfit = 0.014;  // 1.4% minimum
-                this.settings.targetProfit = 0.014;  // 1.4% target
-                this.settings.trailingStopLoss = Math.max(0.010, this.settings.trailingStopLoss || 0.010);
-                this.brain.sellThreshold = 0.014;  // 1.4% sell threshold
-                console.log('💎 PROFIT TARGETS: Min Profit=' + (this.settings.minProfit*100).toFixed(1) + '%, Target=' + (this.settings.targetProfit*100).toFixed(1) + '%, Sell Threshold=' + (this.brain.sellThreshold*100).toFixed(1) + '%');
+                // 💎 ENFORCE PROFIT TARGETS - 1.5% profit, 3% stop loss
+                this.settings.minProfit = 0.015;  // 1.5% minimum
+                this.settings.targetProfit = 0.015;  // 1.5% target
+                this.settings.trailingStopLoss = 0.03;  // 3% stop loss
+                this.settings.stopLoss = 0.03;  // 3% hard stop loss
+                this.brain.sellThreshold = 0.015;  // 1.5% sell threshold
+                console.log('💎 PROFIT TARGETS: Target=' + (this.settings.targetProfit*100).toFixed(1) + '%, Stop Loss=' + (this.settings.stopLoss*100).toFixed(1) + '%');
             }
         } catch (error) {
             console.log('Starting fresh AI training session');
@@ -3552,14 +3553,14 @@ class WorldClassTradingAI {
                 }
             }
             
-            // Calculate smart buy amount - FORCE $2-3 MAXIMUM FOR MEMES
+            // Calculate smart buy amount - FORCE $1.50 PER TRADE
             let tradeAmount;
-            const smallTradeSize = this.wallets.trading >= 10 ? 3 : 2; // $3 if >$10, $2 if <$10
+            const smallTradeSize = 1.50; // $1.50 per trade
             
             if (this.wallets.trading >= smallTradeSize) {
-                // Always use $2-3 (never more!)
+                // Always use $1.50
                 tradeAmount = smallTradeSize;
-                console.log(`💰 FORCED SMALL TRADE: $${smallTradeSize} (Balance: $${this.wallets.trading.toFixed(2)}, Allows ${Math.floor(this.wallets.trading / smallTradeSize)} positions)`);
+                console.log(`💰 TRADE SIZE: $${smallTradeSize} (Balance: $${this.wallets.trading.toFixed(2)}, Allows ${Math.floor(this.wallets.trading / smallTradeSize)} positions)`);
             } else {
                 // 🎯 NOT ENOUGH - Find cheaper alternative!
                 console.log(`⚠️  Insufficient funds for ${market}: Need $${coinMinimum}, have $${this.wallets.trading.toFixed(2)}`);
@@ -3849,6 +3850,15 @@ class WorldClassTradingAI {
         let sellScore = 0;
         let exitReason = '';
         
+        
+        // 🛑 3% STOP LOSS: Sell and find new market when down 3%
+        if (profit <= -0.03) {  // -3% loss
+            sellScore = 1.0;
+            exitReason = `🛑 STOP LOSS -${Math.abs(profit*100).toFixed(1)}% (find new market)`;
+            console.log(`\n🛑 STOP LOSS TRIGGERED FOR ${market}`);
+            console.log(`   Loss: ${(profit*100).toFixed(2)}% | Buy: $${position.buyPrice.toFixed(6)} | Now: $${this.state.currentPrice.toFixed(6)}`);
+            console.log(`   Selling to find better opportunity`);
+        }
         // � EMERGENCY EXIT: CATASTROPHIC LOSS PROTECTION (>50% down)
         // Prevent PNUT-style disasters where we hold -91% losses
         if (profit < -0.50) {  // 50% loss threshold
