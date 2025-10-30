@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LIVE KRAKEN AI</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="2">
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+            font-size: 16px;
+        }
+        h1 { color: #f00; text-align: center; }
+        .box {
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin: 20px 0;
+            background: #111;
+        }
+        .value { color: #ff0; font-size: 24px; font-weight: bold; }
+        .positive { color: #0f0; }
+        .negative { color: #f00; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>💰 LIVE KRAKEN AI - REAL MONEY 💰</h1>
+    
+    <div class="box">
+        <h2>📊 Current Status (Auto-refresh every 2s)</h2>
+        <iframe src="http://localhost:3000/status" width="100%" height="400" style="background:#000; border:none; color:#0f0;"></iframe>
+    </div>
+
+    <div class="box">
+        <h2>📋 Live Logs (Last 30 lines)</h2>
+        <iframe src="http://localhost:3000/logs" width="100%" height="400" style="background:#000; border:none; color:#0f0; font-family:monospace;"></iframe>
+    </div>
+    
+    <div style="text-align: center; margin: 20px;">
+        <p>🌐 Full Dashboard: <a href="http://localhost:3000/dashboard" style="color:#ff0;">http://localhost:3000/dashboard</a></p>
+    </div>
+</body>
+</html>

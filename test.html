@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+</head>
+<body>
+    <h1>Simple Test</h1>
+    <div id="test">Loading...</div>
+    <script>
+        console.log('Test script running');
+        document.getElementById('test').innerHTML = 'JavaScript is working!';
+        
+        fetch('/ai-state.json')
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('AI data loaded:', data);
+                document.getElementById('test').innerHTML = 'Generation: ' + data.generation;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('test').innerHTML = 'Error: ' + error.message;
+            });
+    </script>
+</body>
+</html>

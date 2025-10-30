@@ -1,0 +1,154 @@
+#!/bin/bash
+
+cat << 'EOF'
+
+╔══════════════════════════════════════════════════════════════════════╗
+║           🔑 HOW TO GET YOUR KRAKEN API CREDENTIALS 🔑              ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+📌 YOU NEED TWO THINGS:
+   1. API Key (Public)   - Like a username
+   2. API Secret (Private) - Like a password
+
+⚠️  The API Secret is shown ONLY ONCE when created!
+   If you lost it, you must create a NEW key pair.
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 STEP-BY-STEP GUIDE TO CREATE NEW API KEYS:
+
+1️⃣  LOG IN TO KRAKEN
+    Go to: https://www.kraken.com
+    Click "Sign In"
+    Enter email & password
+    Complete 2FA if enabled
+
+2️⃣  GO TO API SETTINGS
+    Click your name (top right)
+    → Settings
+    → API
+    (Or direct link: https://www.kraken.com/u/security/api)
+
+3️⃣  CREATE NEW KEY
+    Click "Generate New Key"
+    
+4️⃣  CONFIGURE PERMISSIONS (IMPORTANT!)
+    
+    ✅ CHECK THESE BOXES:
+    
+    For Testing (Paper Trading):
+      ☑ Query Funds
+      ☑ Query Open Orders & Trades
+      ☑ Query Closed Orders & Trades
+    
+    For Live Trading (Real Money):
+      ☑ Query Funds
+      ☑ Query Open Orders & Trades
+      ☑ Query Closed Orders & Trades
+      ☑ Create & Modify Orders
+      ☑ Cancel/Close Orders
+    
+    ❌ DO NOT CHECK:
+      ☐ Withdraw Funds (SECURITY RISK!)
+      ☐ Export Data (not needed)
+
+5️⃣  OPTIONAL SECURITY (Recommended)
+    • Description: "Trading Bot - Oct 2025"
+    • Nonce Window: 10 seconds (default)
+    • Key Type: Standard (default)
+
+6️⃣  GENERATE KEY
+    Click "Generate Key"
+    Complete 2FA verification if prompted
+
+7️⃣  SAVE YOUR CREDENTIALS IMMEDIATELY! ⚠️
+    
+    You'll see:
+    ┌─────────────────────────────────────────────────┐
+    │ API Key:    api-key-XXXXXXXXXXX                │
+    │ Private Key: kQH5HW/8p9uGOVjbgWA7Fun...        │
+    └─────────────────────────────────────────────────┘
+    
+    ⚠️  COPY BOTH NOW! The Private Key won't be shown again!
+    
+    Save to:
+      • Password manager (1Password, LastPass, etc.)
+      • Secure notes app
+      • Physical paper in safe place
+    
+    ❌ DO NOT:
+      • Email them to yourself
+      • Put them in Discord/Slack
+      • Commit them to GitHub
+      • Share with anyone
+
+8️⃣  VERIFY IT WORKED
+    You should see your new key in the list:
+    
+    Key Name: Trading Bot - Oct 2025
+    Status: ✓ Active
+    Created: 2025-10-26
+    
+═══════════════════════════════════════════════════════════════════════
+
+🚀 AFTER YOU HAVE YOUR KEYS:
+
+1. Run the setup script:
+   ./setup-kraken.sh
+   
+2. When prompted, paste:
+   API Key: api-key-XXXXXXXXXXX
+   API Secret: kQH5HW/8p9uGOVjbgWA7Fun...
+
+3. Test the connection:
+   node kraken-demo.js
+
+You should see:
+   ✅ Connected to Kraken Public WebSocket
+   📊 SOL/USD - Price: $135.42 | Bid: $135.41 | Ask: $135.43
+
+═══════════════════════════════════════════════════════════════════════
+
+❓ TROUBLESHOOTING:
+
+Q: I already created a key on 8/21/21, can I use it?
+A: Only if you saved the API Secret at that time. 
+   If you lost it, create a new one (you can have multiple keys).
+
+Q: Can I recover the old API Secret?
+A: No. Kraken doesn't store it. You must create a new key pair.
+
+Q: Will creating a new key affect my old one?
+A: No. You can have multiple API keys. The old one stays active.
+
+Q: Should I delete my old key?
+A: Yes, if you're not using it. Click "Remove" next to it.
+
+Q: What if I see "Invalid API Key" error?
+A: Double-check you copied BOTH the key and secret correctly.
+   Make sure there are no extra spaces.
+
+═══════════════════════════════════════════════════════════════════════
+
+🔒 SECURITY REMINDER:
+
+API Keys are like bank account passwords!
+• Never share them
+• Store them securely  
+• Don't enable "Withdraw Funds" permission
+• Use different keys for testing vs production
+• Set up IP whitelist if possible
+• Enable 2FA on your Kraken account
+
+═══════════════════════════════════════════════════════════════════════
+
+📞 NEED MORE HELP?
+
+Kraken Support: https://support.kraken.com
+API Documentation: https://docs.kraken.com/rest/
+
+═══════════════════════════════════════════════════════════════════════
+
+Ready? Let's do this! 🚀
+
+EOF

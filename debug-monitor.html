@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 AI TRADING DEBUG MONITOR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #000000, #0a0a0a, #001a0a);
+            color: #00ff41;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .debug-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .debug-panel {
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            padding: 20px;
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .debug-panel h2 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #00ffff;
+            border-bottom: 1px solid #00ff41;
+            padding-bottom: 10px;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+        
+        .metric-label {
+            color: #cccccc;
+        }
+        
+        .metric-value {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        
+        .good { color: #00ff41 !important; }
+        .warning { color: #ffff00 !important; }
+        .error { color: #ff4444 !important; }
+        
+        .log-area {
+            height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #00ff41;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin: 3px 0;
+            padding: 3px;
+        }
+        
+        .trader-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .trader-card {
+            border: 1px solid #00ff41;
+            border-radius: 8px;
+            padding: 15px;
+            background: rgba(0, 255, 65, 0.08);
+        }
+        
+        .sync-status {
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .calculation-details {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <!-- System Status -->
+        <div class="debug-panel full-width">
+            <h2>🚀 SYSTEM STATUS & SYNC VERIFICATION</h2>
+            <div id="syncStatus" class="sync-status">🔄 Initializing debug monitor...</div>
+            <div class="metric-row">
+                <span class="metric-label">Update Count:</span>
+                <span class="metric-value" id="updateCount">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Last Update:</span>
+                <span class="metric-value" id="lastUpdate">Never</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Data Freshness:</span>
+                <span class="metric-value" id="dataFreshness">Unknown</span>
+            </div>
+        </div>
+        
+        <!-- AI Training Metrics -->
+        <div class="debug-panel">
+            <h2>🧠 AI TRAINING PROGRESS</h2>
+            <div class="metric-row">
+                <span class="metric-label">Generation:</span>
+                <span class="metric-value" id="generation">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Cycle:</span>
+                <span class="metric-value" id="cycle">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Active Traders:</span>
+                <span class="metric-value" id="activeTraders">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Best Trader Score:</span>
+                <span class="metric-value" id="bestScore">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Training Speed:</span>
+                <span class="metric-value" id="trainingSpeed">0 cycles/min</span>
+            </div>
+        </div>
+        
+        <!-- Portfolio & Wallet Verification -->
+        <div class="debug-panel">
+            <h2>💰 PORTFOLIO CALCULATIONS</h2>
+            <div class="metric-row">
+                <span class="metric-label">Main Wallet:</span>
+                <span class="metric-value" id="usdtBalance">$0.00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Trading Wallets:</span>
+                <span class="metric-value" id="solHoldings">$0.00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Banker Wallet:</span>
+                <span class="metric-value" id="solValue">$0.00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Starting Amount:</span>
+                <span class="metric-value">$100.00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total Portfolio:</span>
+                <span class="metric-value" id="totalPortfolio">$0.00</span>
+            </div>
+            <div class="calculation-details" id="portfolioCalc">
+                Calculation: USDT + (SOL × Market Price)
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total Profit:</span>
+                <span class="metric-value" id="totalProfit">$0.00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Profit Percentage:</span>
+                <span class="metric-value" id="profitPercent">0.00%</span>
+            </div>
+        </div>
+        
+        <!-- Market Data -->
+        <div class="debug-panel">
+            <h2>📊 MARKET DATA SYNC</h2>
+            <div class="metric-row">
+                <span class="metric-label">Current Price:</span>
+                <span class="metric-value" id="marketPrice">$0.00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Price Trend:</span>
+                <span class="metric-value" id="priceTrend">0.00%</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Volatility:</span>
+                <span class="metric-value" id="volatility">0.00%</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Market Updates:</span>
+                <span class="metric-value" id="marketUpdates">0</span>
+            </div>
+        </div>
+        
+        <!-- Trading Activity -->
+        <div class="debug-panel">
+            <h2>📈 TRADING VERIFICATION</h2>
+            <div class="metric-row">
+                <span class="metric-label">Total Trades:</span>
+                <span class="metric-value" id="totalTrades">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Buy Orders:</span>
+                <span class="metric-value" id="buyOrders">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Sell Orders:</span>
+                <span class="metric-value" id="sellOrders">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Profitable Trades:</span>
+                <span class="metric-value" id="profitableTrades">0</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Win Rate:</span>
+                <span class="metric-value" id="winRate">0.00%</span>
+            </div>
+        </div>
+        
+        <!-- AI Traders Detail -->
+        <div class="debug-panel full-width">
+            <h2>🤖 AI TRADERS DETAILED ANALYSIS</h2>
+            <div class="trader-grid" id="traderGrid">
+                Loading AI trader data...
+            </div>
+        </div>
+        
+        <!-- Debug Log -->
+        <div class="debug-panel full-width">
+            <h2>📋 DEBUG LOG & CALCULATIONS</h2>
+            <div class="log-area" id="debugLog">
+                <div class="log-entry">🚀 Debug monitor starting...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DebugMonitor {
+            constructor() {
+                console.log('🔧 Debug Monitor Initializing...');
+                this.updateCount = 0;
+                this.lastData = null;
+                this.cycleHistory = [];
+                this.tradeHistory = [];
+                this.startTime = Date.now();
+                
+                this.log('🚀 Debug Monitor Started');
+                this.startMonitoring();
+            }
+            
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logArea = document.getElementById('debugLog');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.innerHTML = `[${timestamp}] ${message}`;
+                logArea.appendChild(entry);
+                logArea.scrollTop = logArea.scrollHeight;
+                console.log(`[DEBUG] ${message}`);
+            }
+            
+            startMonitoring() {
+                this.log('⏰ Starting real-time monitoring (1-second intervals)');
+                this.updateData();
+                setInterval(() => this.updateData(), 1000);
+            }
+            
+            async updateData() {
+                try {
+                    this.updateCount++;
+                    const response = await fetch('/ai-state.json?' + Date.now());
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    this.processData(data);
+                    this.updateSyncStatus('good', '🟢 ALL SYSTEMS SYNCHRONIZED');
+                    
+                } catch (error) {
+                    this.log(`❌ Error fetching data: ${error.message}`);
+                    this.updateSyncStatus('error', '🔴 CONNECTION ERROR');
+                }
+            }
+            
+            processData(data) {
+                this.lastData = data;
+                const now = Date.now();
+                
+                // Track cycle progression
+                if (data.generation && data.cycle) {
+                    const cycleKey = `${data.generation}.${data.cycle}`;
+                    if (!this.cycleHistory.includes(cycleKey)) {
+                        this.cycleHistory.push(cycleKey);
+                        this.log(`🧠 AI Progress: Generation ${data.generation}, Cycle ${data.cycle}`);
+                    }
+                }
+                
+                // Update basic metrics
+                this.updateElement('updateCount', this.updateCount);
+                this.updateElement('lastUpdate', new Date().toLocaleTimeString());
+                
+                // Calculate data freshness
+                if (data.timestamp) {
+                    const dataAge = now - new Date(data.timestamp).getTime();
+                    const freshness = dataAge < 5000 ? 'Fresh' : dataAge < 30000 ? 'Stale' : 'Old';
+                    this.updateElement('dataFreshness', `${freshness} (${(dataAge/1000).toFixed(1)}s ago)`);
+                }
+                
+                // AI Training metrics
+                this.updateTrainingMetrics(data);
+                
+                // Portfolio calculations
+                this.updatePortfolioMetrics(data);
+                
+                // Market data
+                this.updateMarketMetrics(data);
+                
+                // Trading activity
+                this.updateTradingMetrics(data);
+                
+                // AI Traders
+                this.updateTraderDetails(data);
+                
+                // Verify calculations
+                this.verifyCalculations(data);
+            }
+            
+            updateTrainingMetrics(data) {
+                this.updateElement('generation', data.generation || 0);
+                this.updateElement('cycle', data.cycle || 0);
+                this.updateElement('activeTraders', data.traders ? data.traders.length : 0);
+                
+                // Calculate best trader score
+                let bestScore = 0;
+                if (data.traders && data.traders.length > 0) {
+                    bestScore = Math.max(...data.traders.map(t => t.score || 0));
+                }
+                this.updateElement('bestScore', bestScore.toFixed(4));
+                
+                // Calculate training speed (cycles per minute)
+                const runTime = (Date.now() - this.startTime) / 1000 / 60; // minutes
+                const speed = this.cycleHistory.length / runTime;
+                this.updateElement('trainingSpeed', speed.toFixed(2) + ' cycles/min');
+            }
+            
+            updatePortfolioMetrics(data) {
+                const wallets = data.wallets || {};
+                const marketPrice = data.market?.price || 0;
+                
+                // Use the actual wallet structure from the AI system
+                const mainBalance = wallets.main || 0;
+                const totalFunds = data.totalFunds || 0;
+                
+                // The system is trading SOL, so calculate holdings
+                const tradingBalance = (wallets.trader1 || 0) + (wallets.trader2 || 0) + (wallets.trader3 || 0) + (wallets.trader4 || 0);
+                const bankerBalance = wallets.banker || 0;
+                
+                const usdtBalance = mainBalance;
+                const solHoldings = 0; // Currently all converted to USDT when selling
+                const solValueUSD = solHoldings * marketPrice;
+                const totalPortfolio = totalFunds;
+                
+                // Starting amount was $100
+                const totalProfit = totalPortfolio - 100;
+                const profitPercent = (totalProfit / 100) * 100;
+                
+                this.updateElement('usdtBalance', `$${mainBalance.toFixed(2)}`);
+                this.updateElement('solHoldings', `$${tradingBalance.toFixed(2)} (Trading)`);
+                this.updateElement('solValue', `$${bankerBalance.toFixed(2)} (Banker)`);
+                this.updateElement('totalPortfolio', `$${totalPortfolio.toFixed(2)}`);
+                this.updateElement('totalProfit', `$${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)}`);
+                this.updateElement('profitPercent', `${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(2)}%`);
+                
+                // Update calculation details
+                document.getElementById('portfolioCalc').textContent = 
+                    `Calculation: Main($${mainBalance.toFixed(2)}) + Trading($${tradingBalance.toFixed(2)}) + Banker($${bankerBalance.toFixed(2)}) = $${totalPortfolio.toFixed(2)}`;
+                
+                // Color code profit/loss
+                const profitElement = document.getElementById('totalProfit');
+                const percentElement = document.getElementById('profitPercent');
+                const colorClass = totalProfit >= 0 ? 'good' : 'error';
+                profitElement.className = `metric-value ${colorClass}`;
+                percentElement.className = `metric-value ${colorClass}`;
+            }
+            
+            updateMarketMetrics(data) {
+                const market = data.market || {};
+                this.updateElement('marketPrice', `$${(market.price || 0).toFixed(2)}`);
+                this.updateElement('priceTrend', `${(market.trend || 0).toFixed(2)}%`);
+                this.updateElement('volatility', `${(market.volatility || 0).toFixed(2)}%`);
+                this.updateElement('marketUpdates', this.updateCount);
+            }
+            
+            updateTradingMetrics(data) {
+                const trades = data.recentTrades || [];
+                const buyOrders = trades.filter(t => t.type === 'BUY').length;
+                const sellOrders = trades.filter(t => t.type === 'SELL').length;
+                
+                // Count profitable trades (assuming sells are profitable)
+                const profitableTrades = sellOrders;
+                const winRate = trades.length > 0 ? (profitableTrades / trades.length) * 100 : 0;
+                
+                this.updateElement('totalTrades', trades.length);
+                this.updateElement('buyOrders', buyOrders);
+                this.updateElement('sellOrders', sellOrders);
+                this.updateElement('profitableTrades', profitableTrades);
+                this.updateElement('winRate', `${winRate.toFixed(2)}%`);
+            }
+            
+            updateTraderDetails(data) {
+                const traders = data.traders || [];
+                const grid = document.getElementById('traderGrid');
+                
+                if (traders.length === 0) {
+                    grid.innerHTML = '<div class="trader-card">🤖 No active traders</div>';
+                    return;
+                }
+                
+                const traderHTML = traders.map((trader, i) => `
+                    <div class="trader-card">
+                        <div style="font-weight: bold; color: #00ffff; margin-bottom: 10px;">
+                            🤖 AI Trader ${i + 1}
+                        </div>
+                        <div class="metric-row">
+                            <span>Score:</span>
+                            <span style="color: ${trader.score > 0.5 ? '#00ff41' : '#ffff00'}">${(trader.score || 0).toFixed(4)}</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Aggression:</span>
+                            <span>${((trader.aggression || 0) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Risk Tolerance:</span>
+                            <span>${((trader.riskTolerance || 0) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Learning Rate:</span>
+                            <span>${((trader.learningRate || 0) * 100).toFixed(2)}%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Confidence:</span>
+                            <span>${((trader.confidence || 0) * 100).toFixed(1)}%</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                grid.innerHTML = traderHTML;
+            }
+            
+            verifyCalculations(data) {
+                // Verify wallet math
+                const wallets = data.wallets || {};
+                const market = data.market || {};
+                
+                const expectedPortfolio = (wallets.USDT || 0) + ((wallets.SOL || 0) * (market.price || 0));
+                
+                this.log(`💰 Portfolio Verification: USDT=${(wallets.USDT || 0).toFixed(2)} + SOL=${((wallets.SOL || 0) * (market.price || 0)).toFixed(2)} = $${expectedPortfolio.toFixed(2)}`);
+                
+                // Log generation progress
+                if (data.generation && data.cycle) {
+                    this.log(`🧠 Training: Gen ${data.generation}, Cycle ${data.cycle} (${data.traders?.length || 0} traders active)`);
+                }
+                
+                // Log recent trades
+                if (data.recentTrades && data.recentTrades.length > 0) {
+                    const lastTrade = data.recentTrades[data.recentTrades.length - 1];
+                    this.log(`📈 Latest Trade: ${lastTrade.type} ${(lastTrade.amount || 0).toFixed(6)} SOL @ $${(lastTrade.price || 0).toFixed(2)}`);
+                }
+            }
+            
+            updateSyncStatus(type, message) {
+                const status = document.getElementById('syncStatus');
+                status.textContent = message;
+                status.className = `sync-status ${type}`;
+                
+                if (type === 'good') {
+                    status.classList.remove('pulse');
+                } else {
+                    status.classList.add('pulse');
+                }
+            }
+            
+            updateElement(id, value) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+        }
+        
+        // Start debug monitor when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 Starting Debug Monitor...');
+            new DebugMonitor();
+        });
+    </script>
+</body>
+</html>

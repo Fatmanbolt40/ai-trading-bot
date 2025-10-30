@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug AI Dashboard</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff41;
+            padding: 20px;
+        }
+        .debug {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #00ff41;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 AI Dashboard Debug</h1>
+    <div id="status" class="debug">Loading...</div>
+    <div id="data" class="debug">No data</div>
+    <div id="error" class="debug">No errors</div>
+    
+    <script>
+        console.log('🚀 Debug page loaded');
+        
+        async function testAPI() {
+            try {
+                console.log('🔄 Testing API...');
+                const response = await fetch('/ai-state.json');
+                console.log('📡 Response:', response.status, response.statusText);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📦 Data:', data);
+                    
+                    document.getElementById('status').innerHTML = '✅ API Working';
+                    document.getElementById('data').innerHTML = `
+                        Gen: ${data.generation}<br>
+                        Cycle: ${data.cycle}<br>
+                        Traders: ${data.traders ? data.traders.length : 0}<br>
+                        Market: $${data.market ? data.market.price : 'N/A'}
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                document.getElementById('status').innerHTML = '❌ API Failed';
+                document.getElementById('error').innerHTML = error.message;
+            }
+        }
+        
+        // Test immediately and every 5 seconds
+        testAPI();
+        setInterval(testAPI, 5000);
+    </script>
+</body>
+</html>

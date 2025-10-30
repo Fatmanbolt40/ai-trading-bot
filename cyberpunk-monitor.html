@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 AI CRYPTO TRADING - LIVE NEURAL MONITOR</title>
+    <style>
+        /* Matrix Digital Rain Animation */
+        @keyframes matrixRain {
+            0% { top: -100px; opacity: 1; }
+            100% { top: 100vh; opacity: 0; }
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .matrix-char {
+            position: absolute;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            animation: matrixRain linear infinite;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        /* Cyberpunk Glow Animations */
+        @keyframes titlePulse {
+            0%, 100% { text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff; }
+            50% { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; }
+        }
+
+        @keyframes numberGlow {
+            0%, 100% { text-shadow: 0 0 5px #00ff41; }
+            50% { text-shadow: 0 0 15px #00ff41, 0 0 25px #00ff41; }
+        }
+
+        @keyframes fadeInMatrix {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: radial-gradient(circle at 20% 80%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+                        linear-gradient(135deg, #000000, #0a0a0a, #001a0a, #000d1a);
+            color: #00ff41;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            gap: 30px;
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            padding: 25px;
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            animation: fadeInMatrix 1s ease-out;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            text-align: center;
+            color: #00ffff;
+            animation: titlePulse 2s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .status-bar span {
+            padding: 12px 20px;
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            background: rgba(0, 255, 65, 0.1);
+            font-weight: bold;
+            animation: numberGlow 1.5s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+        
+        .status-bar span:hover {
+            background: rgba(0, 255, 65, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .section {
+            padding: 25px;
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            animation: fadeInMatrix 1s ease-out;
+        }
+        
+        .section h2 {
+            color: #00ffff;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .chart-section {
+            grid-column: 1 / -1;
+        }
+        
+        .neural-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .trader-card {
+            padding: 15px;
+            border: 1px solid #00ff41;
+            border-radius: 8px;
+            background: rgba(0, 255, 65, 0.08);
+            transition: transform 0.2s ease;
+        }
+        
+        .trader-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+        }
+        
+        .wallet-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+        }
+        
+        .trading-log {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #00ff41;
+        }
+        
+        .trade-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+            animation: fadeInMatrix 0.5s ease-out;
+        }
+        
+        .trade-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .pulse {
+            animation: numberGlow 1s ease-in-out infinite;
+        }
+        
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 4px;
+        }
+
+        /* Chart placeholder */
+        .chart-placeholder {
+            height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #00ff41;
+            border-radius: 10px;
+            background: rgba(0, 255, 65, 0.05);
+            font-size: 1.2rem;
+            color: #00ffff;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 20px;
+                gap: 20px;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-bar {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Rain Background -->
+    <div class="matrix-bg" id="matrixBg"></div>
+
+    <div class="main-container">
+        <header class="header">
+            <h1>🚀 AI CRYPTO TRADING - LIVE NEURAL MONITOR</h1>
+            <div class="status-bar">
+                <span id="connectionStatus">🔴 CONNECTING...</span>
+                <span id="aiGeneration">Gen: 0 | Cycle: 0</span>
+                <span id="totalPortfolio">Portfolio: $0.00</span>
+                <span id="marketPrice">Market: $0.00</span>
+                <span id="updateSpeed" class="pulse">⚡ LIVE</span>
+            </div>
+        </header>
+        
+        <!-- Chart placeholder -->
+        <section class="section chart-section">
+            <h2>📈 MARKET & PORTFOLIO VISUALIZATION</h2>
+            <div class="chart-placeholder" id="chartArea">
+                📊 Real-time Market Data Display<br>
+                <small>Chart loading with AI data...</small>
+            </div>
+        </section>
+        
+        <!-- Content in 2x2 grid -->
+        <div class="content-grid">
+            <section class="section">
+                <h2>🧠 NEURAL AI TRADERS</h2>
+                <div class="neural-grid" id="neuralGrid">
+                    <div class="trader-card">🤖 Loading AI traders...</div>
+                </div>
+            </section>
+            
+            <section class="section">
+                <h2>💰 LIVE WALLET BALANCES</h2>
+                <div id="walletDisplay">
+                    <div class="wallet-item">💰 Loading wallet data...</div>
+                </div>
+            </section>
+        </div>
+        
+        <!-- Trading log gets full width at bottom -->
+        <section class="section">
+            <h2>📋 LIVE TRADING ACTIVITY</h2>
+            <div class="trading-log scrollbar" id="tradingLog">
+                <div class="trade-entry">🚀 Starting live AI monitor...</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        console.log('🚀 CYBERPUNK AI MONITOR INITIALIZING...');
+        
+        // Matrix Rain Effect
+        function createMatrixRain() {
+            const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+            const matrixBg = document.getElementById('matrixBg');
+            
+            for (let i = 0; i < 50; i++) {
+                const char = document.createElement('div');
+                char.className = 'matrix-char';
+                char.textContent = chars[Math.floor(Math.random() * chars.length)];
+                char.style.left = Math.random() * 100 + '%';
+                char.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                char.style.animationDelay = Math.random() * 2 + 's';
+                matrixBg.appendChild(char);
+            }
+        }
+        
+        // AI Monitor Class
+        class CyberpunkAIMonitor {
+            constructor() {
+                console.log('🔧 Initializing Cyberpunk AI Monitor...');
+                this.updateCount = 0;
+                this.isConnected = false;
+                
+                // Initialize matrix rain
+                createMatrixRain();
+                
+                // Start monitoring
+                this.startMonitoring();
+                console.log('✅ Cyberpunk AI Monitor ready - Matrix activated');
+            }
+            
+            startMonitoring() {
+                console.log('⏰ Starting real-time monitoring...');
+                this.loadAIState();
+                setInterval(() => this.loadAIState(), 1000);
+            }
+            
+            async loadAIState() {
+                try {
+                    console.log(`🔄 Loading AI state... (Update #${this.updateCount})`);
+                    
+                    const response = await fetch('/ai-state.json?' + Date.now());
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('✅ AI data received:', data.generation, data.cycle);
+                    
+                    this.processAIData(data);
+                    this.updateConnectionStatus(true);
+                    this.updateCount++;
+                    
+                } catch (error) {
+                    console.error('❌ Connection error:', error);
+                    this.updateConnectionStatus(false);
+                    this.simulateData();
+                }
+            }
+            
+            processAIData(data) {
+                // Update generation info
+                const genElement = document.getElementById('aiGeneration');
+                if (genElement) {
+                    genElement.textContent = `Gen: ${data.generation || 0} | Cycle: ${data.cycle || 0}`;
+                }
+                
+                // Calculate and display portfolio
+                let totalUSDT = 0;
+                if (data.wallets) {
+                    totalUSDT = data.wallets.USDT || 0;
+                    if (data.wallets.BTC && data.market?.price) {
+                        totalUSDT += (data.wallets.BTC * data.market.price);
+                    }
+                }
+                
+                const portfolioElement = document.getElementById('totalPortfolio');
+                if (portfolioElement) {
+                    portfolioElement.textContent = `Portfolio: $${totalUSDT.toFixed(2)}`;
+                }
+                
+                // Update market price
+                const marketElement = document.getElementById('marketPrice');
+                if (marketElement) {
+                    marketElement.textContent = `Market: $${data.market?.price?.toFixed(2) || '0.00'}`;
+                }
+                
+                // Update chart area with data summary
+                this.updateChartArea(data);
+                
+                // Display AI traders
+                this.displayTraders(data.traders || []);
+                
+                // Display wallet balances
+                this.displayWallets(data.wallets || {});
+                
+                // Display trading activity
+                this.displayTrades(data.recentTrades || []);
+            }
+            
+            updateChartArea(data) {
+                const chartArea = document.getElementById('chartArea');
+                if (chartArea && data.market) {
+                    const profit = data.wallets ? ((data.wallets.USDT || 0) + (data.wallets.BTC || 0) * (data.market.price || 0)) - 1000 : 0;
+                    const profitPercent = (profit / 1000 * 100).toFixed(2);
+                    
+                    chartArea.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; margin-bottom: 10px;">📊 LIVE MARKET DATA</div>
+                            <div style="font-size: 1.2rem; color: #00ffff;">BTC/USDT: $${data.market.price?.toFixed(2) || '0.00'}</div>
+                            <div style="margin: 10px 0; font-size: 1.1rem;">
+                                <span style="color: ${profit >= 0 ? '#00ff41' : '#ff4444'}">
+                                    ${profit >= 0 ? '📈' : '📉'} P&L: ${profitPercent}% (${profit >= 0 ? '+' : ''}$${profit.toFixed(2)})
+                                </span>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #888;">Gen ${data.generation} • Cycle ${data.cycle}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            displayTraders(traders) {
+                const grid = document.getElementById('neuralGrid');
+                if (!grid) return;
+                
+                if (traders.length === 0) {
+                    grid.innerHTML = '<div class="trader-card">🤖 No active traders</div>';
+                    return;
+                }
+                
+                const tradersHTML = traders.map((trader, i) => `
+                    <div class="trader-card">
+                        <div style="font-weight: bold; color: #00ffff;">🤖 AI Trader ${i + 1}</div>
+                        <div>💯 Score: ${(trader.score || 0).toFixed(3)}</div>
+                        <div>⚡ Aggression: ${((trader.aggression || 0) * 100).toFixed(0)}%</div>
+                        <div>🎯 Risk Tolerance: ${((trader.riskTolerance || 0) * 100).toFixed(0)}%</div>
+                        <div>🧠 Learning Rate: ${((trader.learningRate || 0) * 100).toFixed(1)}%</div>
+                    </div>
+                `).join('');
+                
+                grid.innerHTML = tradersHTML;
+            }
+            
+            displayWallets(wallets) {
+                const display = document.getElementById('walletDisplay');
+                if (!display) return;
+                
+                const entries = Object.entries(wallets);
+                if (entries.length === 0) {
+                    display.innerHTML = '<div class="wallet-item">💰 No wallet data</div>';
+                    return;
+                }
+                
+                const walletsHTML = entries.map(([coin, amount]) => `
+                    <div class="wallet-item">
+                        <span>💰 ${coin}:</span>
+                        <span style="color: #00ffff;">${typeof amount === 'number' ? amount.toFixed(6) : amount}</span>
+                    </div>
+                `).join('');
+                
+                display.innerHTML = walletsHTML;
+            }
+            
+            displayTrades(trades) {
+                const log = document.getElementById('tradingLog');
+                if (!log) return;
+                
+                if (trades.length === 0) {
+                    log.innerHTML = '<div class="trade-entry">📊 No recent trades</div>';
+                    return;
+                }
+                
+                const tradesHTML = trades.slice(-15).map(trade => {
+                    const time = trade.timestamp ? new Date(trade.timestamp).toLocaleTimeString() : 'now';
+                    const icon = trade.type === 'BUY' ? '🟢' : '🔴';
+                    const color = trade.type === 'BUY' ? '#00ff41' : '#ff4444';
+                    
+                    return `
+                        <div class="trade-entry" style="color: ${color};">
+                            ${icon} ${trade.type} ${(trade.amount || 0).toFixed(6)} BTC @ $${(trade.price || 0).toFixed(2)} 
+                            <span style="color: #888; float: right;">${time}</span>
+                        </div>
+                    `;
+                }).join('');
+                
+                log.innerHTML = tradesHTML;
+                log.scrollTop = log.scrollHeight; // Auto-scroll to bottom
+            }
+            
+            updateConnectionStatus(connected) {
+                const status = document.getElementById('connectionStatus');
+                if (!status) return;
+                
+                if (connected) {
+                    status.textContent = '🟢 NEURAL LINK ACTIVE';
+                    status.style.color = '#00ff41';
+                    this.isConnected = true;
+                } else {
+                    status.textContent = '🔴 CONNECTION LOST';
+                    status.style.color = '#ff4444';
+                    this.isConnected = false;
+                }
+            }
+            
+            simulateData() {
+                console.log('🔄 Running in simulation mode...');
+                // Could add simulation data here if needed
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DOM loaded, starting Cyberpunk AI Monitor...');
+            setTimeout(() => {
+                new CyberpunkAIMonitor();
+            }, 500);
+        });
+        
+    </script>
+</body>
+</html>

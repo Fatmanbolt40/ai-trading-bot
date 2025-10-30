@@ -1,0 +1,48 @@
+# Crypto Trading AI - Sensitive Data
+# DO NOT COMMIT THESE FILES TO GITHUB
+
+# Environment variables (API keys)
+.env
+.env.*
+
+# Trading state and history
+paper-trading-state.json
+paper-trading-state.json.*
+*.bak
+*.backup*
+
+# AI learning data
+ai-historical-data.json
+ai-historical-data.json.*
+
+# Log files
+*.log
+ai-log.txt
+ai-log-test.txt
+ai-monitor.log*
+
+# Real-time commands (may contain sensitive data)
+ai-realtime-commands.json
+
+# Exit plan (may contain portfolio details)
+EXIT_PLAN.md
+
+# Node modules
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+temp/
+tmp/

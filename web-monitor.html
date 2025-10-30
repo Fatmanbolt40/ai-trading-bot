@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 AI CRYPTO TRADING - LIVE NEURAL MONITOR</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #000000, #0a0a0a, #001a0a, #000d1a);
+            color: #00ff41;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(transparent 98%, rgba(0, 255, 65, 0.3) 100%),
+                linear-gradient(90deg, transparent 98%, rgba(0, 255, 255, 0.2) 100%);
+            background-size: 100px 100px, 100px 100px;
+            animation: matrixRain 20s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        @keyframes matrixRain {
+            0% { background-position: 0% 0%, 0% 0%; }
+            100% { background-position: 0% 100vh, 100% 100vh; }
+        }
+        
+                .main-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            gap: 30px;
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .main-container {
+                padding: 20px;
+                gap: 20px;
+            }
+        }
+        
+        .chart-section {
+            grid-column: 1 / -1;
+            margin-bottom: 30px;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, rgba(0, 255, 65, 0.2), rgba(0, 255, 255, 0.2));
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 1px solid #00ff41;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 65, 0.5),
+                inset 0 0 20px rgba(0, 255, 65, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+            animation: matrixScan 4s linear infinite;
+        }
+        
+        @keyframes matrixScan {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .section {
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.9), rgba(0, 20, 0, 0.9));
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            padding: 25px;
+            min-height: 400px;
+            box-shadow: 
+                0 8px 32px rgba(0, 255, 65, 0.3),
+                inset 0 1px 0 rgba(0, 255, 65, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+            animation: matrixGlitch 6s linear infinite;
+        }
+        
+        @keyframes matrixGlitch {
+            0%, 90%, 100% { left: -100%; }
+            95% { left: 100%; }
+        }
+        
+        .section h2 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #00ff41;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+            padding-bottom: 10px;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 65, 0.8),
+                0 0 20px rgba(0, 255, 65, 0.6),
+                0 0 30px rgba(0, 255, 65, 0.4);
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 10px rgba(0, 255, 65, 0.8), 0 0 20px rgba(0, 255, 65, 0.6); }
+            to { text-shadow: 0 0 15px rgba(0, 255, 65, 1), 0 0 25px rgba(0, 255, 65, 0.8); }
+        }
+        
+        .neural-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .neural-trader {
+            background: linear-gradient(135deg, rgba(0, 255, 65, 0.15), rgba(0, 200, 50, 0.08));
+            border: 2px solid #00ff41;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            font-size: 15px;
+            line-height: 1.5;
+            min-height: 150px;
+            box-shadow: 
+                0 4px 15px rgba(0, 255, 65, 0.4),
+                inset 0 1px 0 rgba(0, 255, 65, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .neural-trader:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 25px rgba(0, 255, 65, 0.6),
+                inset 0 1px 0 rgba(0, 255, 65, 0.5);
+            border-color: #00ffff;
+        }
+        
+        .neural-trader.active {
+            border-color: #ffff00;
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.3);
+        }
+        
+        .neural-trader.holding {
+            border-color: #ff6600;
+            box-shadow: 0 0 15px rgba(255, 102, 0, 0.3);
+        }
+        
+        .dna-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00);
+            margin: 2px 0;
+            border-radius: 2px;
+        }
+        
+        .fitness-meter {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .fitness-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .fitness-positive { background: #00ff41; }
+        .fitness-negative { background: #ff4444; }
+        
+        .trading-log {
+            height: 350px;
+            overflow-y: auto;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(0, 10, 0, 0.95));
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+        
+        .trade-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+            animation: fadeInMatrix 0.5s ease-in;
+        }
+        
+        @keyframes fadeInMatrix {
+            from { 
+                opacity: 0; 
+                transform: translateX(-20px);
+                color: #00ffff;
+                text-shadow: 0 0 20px #00ffff;
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0);
+            }
+        }
+        
+        .text-green { color: #00ff41 !important; }
+        .text-red { color: #ff4444 !important; }
+        .text-cyan { color: #00ffff !important; }
+        .text-gray { color: #888888 !important; }
+        
+        h1 {
+            font-size: 28px;
+            text-shadow: 
+                0 0 10px #00ff41,
+                0 0 20px #00ff41,
+                0 0 30px #00ff41,
+                0 0 40px #00ff41;
+            animation: titlePulse 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titlePulse {
+            from { text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px #00ff41; }
+            to { text-shadow: 0 0 15px #00ff41, 0 0 25px #00ff41, 0 0 35px #00ff41, 0 0 45px #00ff41; }
+        }
+        
+        .trade-entry {
+            margin: 2px 0;
+            padding: 3px;
+            border-left: 3px solid;
+            padding-left: 8px;
+        }
+        
+        .trade-buy { border-color: #00ff41; }
+        .trade-sell { border-color: #ff4444; }
+        .trade-market { border-color: #ffff00; }
+        
+        .wallet-display {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .wallet-card {
+            background: rgba(0, 255, 65, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #00ff41;
+            text-align: left;
+        }
+        
+        .wallet-main {
+            border-color: #ffff00;
+            background: rgba(255, 255, 0, 0.1);
+        }
+        
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .market-chart {
+            grid-column: 1 / 3;
+            min-height: 450px;
+        }
+        
+        .wallet-section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .balance-change {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            animation: pulse 1s ease-in-out;
+        }
+        
+        .balance-up { 
+            color: #00ff41; 
+            font-weight: bold; 
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+            animation: numberGlow 1s ease-in-out;
+        }
+        .balance-down { 
+            color: #ff4444; 
+            font-weight: bold; 
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.8);
+            animation: numberGlow 1s ease-in-out;
+        }
+        
+        @keyframes numberGlow {
+            0% { transform: scale(1.2); text-shadow: 0 0 20px currentColor; }
+            100% { transform: scale(1); }
+        }
+        
+        .wallet-card {
+            border-radius: 10px;
+            transition: transform 0.2s ease;
+        }
+        
+        .wallet-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .trade-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            z-index: 10;
+        }
+        
+        .trade-buy { background: #00ff41; }
+        .trade-sell { background: #ff4444; }
+        
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            font-size: 16px;
+        }        .blink {
+            animation: blink 0.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .neural-activity {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff41;
+        }
+        
+        .neural-activity.thinking {
+            background: #ffff00;
+            animation: pulse 0.5s infinite;
+        }
+        
+        .neural-activity.trading {
+            background: #ff6600;
+            animation: blink 0.2s infinite;
+        }
+        
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <header class="header">
+            <h1>🚀 AI CRYPTO TRADING - LIVE NEURAL MONITOR</h1>
+            <div class="status-bar">
+                <span id="connectionStatus">🔴 CONNECTING...</span>
+                <span id="aiGeneration">Gen: 0 | Cycle: 0</span>
+                <span id="totalPortfolio">Portfolio: $0.00</span>
+                <span id="marketPrice">Market: $0.00</span>
+                <span id="updateSpeed" class="pulse">⚡ LIVE</span>
+            </div>
+        </header>
+        
+        <!-- Chart gets full width at the top -->
+        <section class="section chart-section" style="min-height: 450px;">
+            <h2>📈 MARKET & PORTFOLIO CHARTS</h2>
+            <div style="position: relative; height: 350px; margin-top: 20px;">
+                <canvas id="marketChart"></canvas>
+            </div>
+        </section>
+        
+        <!-- Content in 2x2 grid -->
+        <div class="content-grid">
+            <section class="section">
+                <h2>🧠 NEURAL AI TRADERS</h2>
+                <div class="neural-grid" id="neuralGrid">
+                    <!-- AI Traders will be populated here -->
+                </div>
+            </section>
+            
+            <section class="section">
+                <h2>💰 LIVE WALLET BALANCES</h2>
+                <div id="walletDisplay">
+                    <!-- Wallet balances will be populated here -->
+                </div>
+            </section>
+        </div>
+        
+        <!-- Trading log gets full width at bottom -->
+        <section class="section">
+            <h2>📋 LIVE TRADING ACTIVITY</h2>
+            <div class="trading-log scrollbar" id="tradingLog">
+                <div class="trade-entry">🚀 Starting live monitor...</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // IMMEDIATE DEBUG OUTPUT
+        console.log('🚀 PAGE LOADED - Starting AI Monitor');
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ DOM LOADED');
+            // Show immediate status
+            setTimeout(() => {
+                const status = document.getElementById('connectionStatus');
+                if (status) {
+                    status.textContent = '🟡 LOADING...';
+                }
+            }, 50);
+        });
+        
+        class LiveAIMonitor {
+            constructor() {
+                console.log('🔧 Initializing AI Monitor...');
+                console.log('📍 Current timestamp:', new Date().toLocaleTimeString());
+                this.aiData = null;
+                this.tradeHistory = [];
+                this.marketData = [];
+                this.updateCount = 0;
+                this.lastUpdate = Date.now();
+                this.previousBalances = {};
+                this.tradeMarkers = [];
+                
+                console.log('📊 Initializing chart...');
+                this.initChart();
+                console.log('⏰ Starting monitoring...');
+                this.startMonitoring();
+                
+                console.log('✅ AI Monitor initialized - updating every 100ms');
+                
+                // Add visible status update to page
+                setTimeout(() => {
+                    const status = document.getElementById('connectionStatus');
+                    if (status) {
+                        status.textContent = '🟢 INITIALIZING...';
+                        status.style.color = '#00ff41';
+                    }
+                }, 100);
+            }
+            
+            initChart() {
+                try {
+                    if (typeof Chart === 'undefined') {
+                        console.log('⚠️ Chart.js not available, skipping chart initialization');
+                        document.getElementById('marketChart').parentElement.innerHTML = '<p style="color: #ffff00; text-align: center; padding: 20px;">📊 Chart disabled - Data monitoring active</p>';
+                        return;
+                    }
+                    
+                    console.log('📈 Chart.js version:', Chart.version);
+                    
+                    // Try to register the annotation plugin if available
+                    if (typeof ChartAnnotation !== 'undefined') {
+                        Chart.register(ChartAnnotation);
+                        console.log('✅ Annotation plugin registered');
+                    } else {
+                        console.log('⚠️ Annotation plugin not found, continuing without annotations');
+                    }
+                    
+                    const ctx = document.getElementById('marketChart').getContext('2d');
+                    console.log('📊 Canvas context acquired');
+                    
+                    this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Market Price',
+                            data: [],
+                            borderColor: '#00ff41',
+                            backgroundColor: 'rgba(0, 255, 65, 0.1)',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 6,
+                            borderWidth: 3
+                        }, {
+                            label: 'Portfolio Value',
+                            data: [],
+                            borderColor: '#ffff00',
+                            backgroundColor: 'rgba(255, 255, 0, 0.1)',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 6,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        scales: {
+                            x: { 
+                                grid: { color: 'rgba(0, 255, 65, 0.2)' },
+                                ticks: { color: '#00ff41', maxTicksLimit: 10 }
+                            },
+                            y: { 
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                grid: { color: 'rgba(0, 255, 65, 0.2)' },
+                                ticks: { color: '#00ff41' },
+                                title: { display: true, text: 'Price ($)', color: '#00ff41' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                grid: { drawOnChartArea: false },
+                                ticks: { color: '#ffff00' },
+                                title: { display: true, text: 'Portfolio ($)', color: '#ffff00' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#00ff41', padding: 20 }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#00ff41',
+                                bodyColor: '#00ff41',
+                                borderColor: '#00ff41',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                });
+                console.log('✅ Chart created successfully');
+                } catch (error) {
+                    console.error('❌ Chart initialization error:', error);
+                }
+            }
+            
+            async loadAIState() {
+                try {
+                    console.log('🔄 Fetching AI state...');
+                    const response = await fetch('/ai-state.json?' + Date.now());
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('✅ AI data loaded:', data.generation, data.cycle);
+                        
+                        // Immediately show generation on page
+                        const genElement = document.getElementById('aiGeneration');
+                        if (genElement && data.generation) {
+                            genElement.textContent = `Gen: ${data.generation} | Cycle: ${data.cycle || 0}`;
+                        }
+                        
+                        this.processAIData(data);
+                        this.updateConnectionStatus(true);
+                    } else {
+                        console.log('❌ Response not OK:', response.status);
+                        this.updateConnectionStatus(false);
+                    }
+                } catch (error) {
+                    console.log('❌ Error loading AI state:', error);
+                    console.log('Loading AI state from simulation...');
+                    this.simulateAIData();
+                    this.updateConnectionStatus(false);
+                }
+            }
+            
+            processAIData(data) {
+                console.log('🔥 Processing AI data:', {
+                    gen: data.generation,
+                    traders: data.traders ? data.traders.length : 0,
+                    trades: data.recentTrades ? data.recentTrades.length : 0,
+                    market: data.market ? data.market.price : 'no market'
+                });
+                this.aiData = data;
+                this.updateDisplay();
+                if (data.market && data.wallets) {
+                    this.updateChart(data.market.price, data.wallets.totalFunds);
+                }
+            }
+            
+            simulateAIData() {
+                // Simulate realistic AI data for demo
+                const now = Date.now();
+                const marketPrice = 50 + Math.sin(now / 10000) * 30 + Math.random() * 10;
+                
+                this.aiData = {
+                    generation: Math.floor(now / 30000) % 10 + 1,
+                    cycle: Math.floor(now / 2000) % 20,
+                    market: {
+                        price: marketPrice,
+                        trend: (Math.random() - 0.5) * 5,
+                        volume: Math.random() * 100
+                    },
+                    wallets: {
+                        totalFunds: 100,
+                        main: 60,
+                        banker: 8,
+                        traders: [8, 8, 8, 8]
+                    },
+                    traders: this.generateSimulatedTraders(),
+                    recentTrades: this.generateSimulatedTrades()
+                };
+                
+                this.updateDisplay();
+                this.updateChart(marketPrice, 100);
+            }
+            
+            generateSimulatedTraders() {
+                const traders = [];
+                for (let i = 0; i < 4; i++) {
+                    const isActive = Math.random() > 0.7;
+                    const isHolding = Math.random() > 0.8;
+                    
+                    traders.push({
+                        id: i + 1,
+                        balance: 8,
+                        fitness: (Math.random() - 0.5) * 5,
+                        winRate: Math.random() * 100,
+                        holdings: isHolding ? Math.random() * 0.1 : 0,
+                        dna: Array.from({length: 8}, () => Math.random()),
+                        status: isActive ? (isHolding ? 'HOLDING' : 'TRADING') : 'READY',
+                        confidence: Math.random() * 100,
+                        trades: Math.floor(Math.random() * 20)
+                    });
+                }
+                return traders;
+            }
+            
+            generateSimulatedTrades() {
+                const trades = [];
+                const now = new Date();
+                for (let i = 0; i < 5; i++) {
+                    const time = new Date(now.getTime() - i * 2000);
+                    const isBuy = Math.random() > 0.5;
+                    const amount = (Math.random() * 0.05).toFixed(4);
+                    const price = (50 + Math.random() * 40).toFixed(2);
+                    
+                    trades.push({
+                        time: time.toLocaleTimeString(),
+                        type: isBuy ? 'BUY' : 'SELL',
+                        trader: Math.floor(Math.random() * 4) + 1,
+                        amount: amount,
+                        price: price,
+                        profit: isBuy ? null : (Math.random() - 0.5) * 2
+                    });
+                }
+                return trades;
+            }
+            
+            updateDisplay() {
+                if (!this.aiData) return;
+                
+                // Update header
+                document.getElementById('aiGeneration').textContent = 
+                    `Gen: ${this.aiData.generation} | Cycle: ${this.aiData.cycle}`;
+                document.getElementById('totalPortfolio').textContent = 
+                    `Portfolio: $${this.aiData.wallets ? this.aiData.wallets.totalFunds.toFixed(2) : this.aiData.totalFunds.toFixed(2)}`;
+                document.getElementById('marketPrice').textContent = 
+                    `Market: $${this.aiData.market.price.toFixed(2)}`;
+                
+                this.updateNeuralTraders();
+                this.updateWalletBalances();
+                this.updateTradingLog();
+            }
+            
+            updateNeuralTraders() {
+                const grid = document.getElementById('neuralGrid');
+                grid.innerHTML = '';
+                
+                this.aiData.traders.forEach(trader => {
+                    const traderDiv = document.createElement('div');
+                    const isHolding = trader.holdings > 0;
+                    const status = isHolding ? 'HOLDING' : (trader.balance > 0.5 ? 'READY' : 'LOW_FUNDS');
+                    
+                    traderDiv.className = `neural-trader ${isHolding ? 'holding' : 'active'}`;
+                    
+                    const fitnessPercent = Math.max(0, Math.min(100, (trader.fitness + 10) * 5));
+                    const isPositive = trader.fitness > 0;
+                    
+                    // Get DNA as object keys
+                    const dnaKeys = Object.keys(trader.dna || {});
+                    const dnaValues = Object.values(trader.dna || {});
+                    
+                    traderDiv.innerHTML = `
+                        <div class="neural-activity ${isHolding ? 'thinking' : 'trading'}"></div>
+                        <h3 style="margin: 0 0 10px 0; color: ${isHolding ? '#ff6600' : '#00ff41'}">🤖 AI Trader ${trader.id}</h3>
+                        
+                        <div style="margin-bottom: 8px;">
+                            <strong>💰 Balance:</strong> $${trader.balance.toFixed(2)}
+                        </div>
+                        
+                        ${isHolding ? `
+                            <div style="margin-bottom: 8px; color: #ff6600;">
+                                <strong>💎 Holdings:</strong> ${trader.holdings.toFixed(4)} SOL
+                            </div>
+                        ` : ''}
+                        
+                        <div style="margin-bottom: 8px;">
+                            <strong>📊 Status:</strong> 
+                            <span style="color: ${isHolding ? '#ff6600' : '#00ff41'}">${status}</span>
+                        </div>
+                        
+                        <div style="margin-bottom: 8px;">
+                            <strong>🎯 Performance:</strong> ${trader.fitness.toFixed(1)} 
+                            (${trader.wins}W/${trader.losses}L)
+                        </div>
+                        
+                        <div class="fitness-meter">
+                            <div class="fitness-fill ${isPositive ? 'fitness-positive' : 'fitness-negative'}" 
+                                 style="width: ${fitnessPercent}%"></div>
+                        </div>
+                        
+                        <div style="margin-top: 8px;">
+                            <strong>📈 Win Rate:</strong> ${trader.winRate.toFixed(0)}%
+                        </div>
+                    `;
+                    
+                    grid.appendChild(traderDiv);
+                });
+            }
+            
+            updateTradingLog() {
+                const log = document.getElementById('tradingLog');
+                
+                this.aiData.recentTrades.forEach(trade => {
+                    if (!this.tradeHistory.includes(trade.time + trade.type + trade.trader)) {
+                        this.tradeHistory.push(trade.time + trade.type + trade.trader);
+                        
+                        const entry = document.createElement('div');
+                        entry.className = `trade-entry trade-${trade.type.toLowerCase()}`;
+                        
+                        let profitText = '';
+                        if (trade.profit !== null) {
+                            profitText = trade.profit > 0 
+                                ? ` → PROFIT +$${trade.profit.toFixed(4)} (${((trade.profit/2)*100).toFixed(1)}%)`
+                                : ` → LOSS $${trade.profit.toFixed(4)} (${((trade.profit/2)*100).toFixed(1)}%)`;
+                        }
+                        
+                        const isProfit = trade.profit && trade.profit > 0;
+                        const glowColor = trade.type === 'BUY' ? '#00ff41' : 
+                                         isProfit ? '#00ffff' : '#ff4444';
+                        
+                        entry.innerHTML = `
+                            <span style="color: #00ff41; text-shadow: 0 0 5px #00ff41;">[${trade.time}]</span>
+                            <span style="color: ${glowColor}; text-shadow: 0 0 10px ${glowColor}; font-size: 16px;">
+                                ${trade.type === 'BUY' ? '🟢' : isProfit ? '🔵' : '🔴'}
+                            </span>
+                            <span style="color: #00ffff; text-shadow: 0 0 8px #00ffff;">AI-${trade.trader}</span>
+                            <span style="color: ${glowColor}; font-weight: bold;">${trade.type}:</span>
+                            <span style="color: #ffffff;">${trade.amount} SOL @ $${trade.price}</span>
+                            <span style="color: ${isProfit ? '#00ffff' : '#ff4444'}; text-shadow: 0 0 10px currentColor;">${profitText}</span>
+                        `;
+                        
+                        log.insertBefore(entry, log.firstChild);
+                        
+                        // Keep only last 50 entries
+                        while (log.children.length > 50) {
+                            log.removeChild(log.lastChild);
+                        }
+                    }
+                });
+            }
+            
+            updateWalletBalances() {
+                const walletDisplay = document.getElementById('walletDisplay');
+                if (!this.aiData) return;
+                
+                // Get wallet data with real-time updates
+                const wallets = this.aiData.wallets || {};
+                const currentPrice = this.aiData.market ? this.aiData.market.price : 100;
+                
+                let html = '<div style="display: flex; flex-direction: column; gap: 15px; height: 100%;">';
+                
+                // Main wallet (full width)
+                const mainBalance = wallets.main || (this.aiData.totalFunds * 0.6);
+                const mainChange = this.getBalanceChange('main', mainBalance);
+                html += `
+                    <div class="wallet-card" style="background: rgba(255, 215, 0, 0.1); border: 2px solid #ffd700; padding: 20px; margin-bottom: 15px;">
+                        <h3 style="color: #ffd700; margin: 0 0 15px 0; font-size: 20px;">👑 Main Wallet (60% Protected)</h3>
+                        <div style="font-size: 28px; font-weight: bold; color: #ffd700;">$${mainBalance.toFixed(2)} ${mainChange}</div>
+                        <div style="color: #ffd700; margin-top: 5px;">Reserve Fund - Always Protected</div>
+                    </div>
+                `;
+                
+                // Banker
+                const bankerBalance = wallets.banker || (this.aiData.totalFunds * 0.08);
+                const bankerChange = this.getBalanceChange('banker', bankerBalance);
+                html += `
+                    <div class="wallet-card" style="padding: 15px; margin-bottom: 15px; background: rgba(0, 255, 65, 0.1); border: 2px solid #00ff41;">
+                        <h4 style="margin: 0 0 10px 0; color: #00ff41;">🏦 Banker</h4>
+                        <div style="font-size: 20px; font-weight: bold;">$${bankerBalance.toFixed(2)} ${bankerChange}</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 5px;">Trading Reserve</div>
+                    </div>
+                `;
+                
+                // AI Traders Grid
+                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">';
+                
+                // AI Traders - show real holdings and status
+                if (this.aiData.traders) {
+                    this.aiData.traders.forEach((trader) => {
+                        const walletKey = `trader${trader.id}`;
+                        const balance = wallets[walletKey] || trader.balance || 8;
+                        const change = this.getBalanceChange(walletKey, balance);
+                        const holdings = trader.holdings || 0;
+                        const holdingsValue = holdings * currentPrice;
+                        const totalValue = balance + holdingsValue;
+                        
+                        // Determine status and colors
+                        let status = 'READY';
+                        let statusColor = '#00ff41';
+                        if (holdings > 0) {
+                            status = 'HOLDING';
+                            statusColor = '#ff6600';
+                        } else if (trader.status === 'TRADING') {
+                            status = 'TRADING';
+                            statusColor = '#ffff00';
+                        }
+                        
+                        html += `
+                            <div class="wallet-card" style="border: 2px solid ${statusColor}; padding: 18px; background: rgba(0, 0, 0, 0.3);">
+                                <h4 style="margin: 0 0 12px 0; color: ${statusColor}; font-size: 16px;">🤖 AI Trader ${trader.id}</h4>
+                                <div style="font-size: 15px; margin-bottom: 10px;">
+                                    💰 Cash: <strong>$${balance.toFixed(2)}</strong> ${change}
+                                </div>
+                                ${holdings > 0 ? `
+                                    <div style="color: #ff6600; margin-bottom: 10px;">
+                                        💎 Holdings: <strong>${holdings.toFixed(4)} SOL</strong><br>
+                                        <span style="font-size: 13px;">Worth: $${holdingsValue.toFixed(2)}</span>
+                                    </div>
+                                    <div style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">
+                                        📊 Total Value: $${totalValue.toFixed(2)}
+                                    </div>
+                                ` : ''}
+                                <div style="font-size: 14px; margin-bottom: 8px;">
+                                    Status: <span style="color: ${statusColor}; font-weight: bold;">${status}</span>
+                                </div>
+                                <div style="font-size: 11px; color: #999;">
+                                    Fitness: ${trader.fitness ? trader.fitness.toFixed(1) : '0.0'} | 
+                                    Trades: ${trader.trades || 0} | 
+                                    Win Rate: ${trader.winRate ? trader.winRate.toFixed(1) : '0.0'}%
+                                </div>
+                            </div>
+                        `;
+                });
+                
+                html += '</div>'; // Close traders grid
+                html += '</div>'; // Close main container
+                
+                walletDisplay.innerHTML = html;
+            }
+            
+            getBalanceChange(wallet, currentBalance) {
+                if (!this.previousBalances[wallet]) {
+                    this.previousBalances[wallet] = currentBalance;
+                    return '';
+                }
+                
+                const diff = currentBalance - this.previousBalances[wallet];
+                this.previousBalances[wallet] = currentBalance;
+                
+                if (Math.abs(diff) < 0.0001) return '';
+                
+                const className = diff > 0 ? 'balance-up' : 'balance-down';
+                const symbol = diff > 0 ? '▲' : '▼';
+                return `<span class="${className}">${symbol}${Math.abs(diff).toFixed(4)}</span>`;
+            }
+
+            updateChart(marketPrice, portfolioValue) {
+                const now = new Date().toLocaleTimeString();
+                
+                this.chart.data.labels.push(now);
+                this.chart.data.datasets[0].data.push(marketPrice);
+                this.chart.data.datasets[1].data.push(portfolioValue);
+                
+                // Add annotations for buy/sell markers
+                this.addTradeAnnotations(marketPrice);
+                
+                // Keep only last 25 data points for better visibility
+                if (this.chart.data.labels.length > 25) {
+                    this.chart.data.labels.shift();
+                    this.chart.data.datasets[0].data.shift();
+                    this.chart.data.datasets[1].data.shift();
+                }
+                
+                this.chart.update('none');
+            }
+            
+            addTradeAnnotations(currentPrice) {
+                if (!this.aiData.recentTrades) return;
+                
+                // Clear existing annotations
+                if (!this.chart.options.plugins.annotation) {
+                    this.chart.options.plugins.annotation = { annotations: {} };
+                }
+                
+                // Add new annotations for recent trades
+                const recentTrades = this.aiData.recentTrades.slice(0, 5); // Last 5 trades
+                const currentIndex = this.chart.data.labels.length - 1;
+                
+                recentTrades.forEach((trade, i) => {
+                    if (trade.type === 'BUY' || trade.type === 'SELL') {
+                        const isBuy = trade.type === 'BUY';
+                        const tradePrice = parseFloat(trade.price);
+                        
+                        // Add point annotation on the price line
+                        this.chart.options.plugins.annotation.annotations[`trade_${i}`] = {
+                            type: 'point',
+                            xValue: currentIndex - i,
+                            yValue: tradePrice,
+                            backgroundColor: isBuy ? '#00ff41' : '#ff4444',
+                            borderColor: isBuy ? '#00ff41' : '#ff4444',
+                            borderWidth: 2,
+                            radius: 6,
+                            display: true
+                        };
+                        
+                        // Add label
+                        this.chart.options.plugins.annotation.annotations[`label_${i}`] = {
+                            type: 'label',
+                            xValue: currentIndex - i,
+                            yValue: tradePrice + (isBuy ? -5 : 5),
+                            content: isBuy ? '🟢 BUY' : '🔴 SELL',
+                            color: isBuy ? '#00ff41' : '#ff4444',
+                            font: { size: 10 },
+                            display: true
+                        };
+                    }
+                });
+            }
+            
+            updateConnectionStatus(connected) {
+                const status = document.getElementById('connectionStatus');
+                if (connected) {
+                    status.innerHTML = '🟢 LIVE AI CONNECTED';
+                    status.style.color = '#00ff41';
+                } else {
+                    status.innerHTML = '🟡 SIMULATION MODE';
+                    status.style.color = '#ffff00';
+                }
+                
+                this.updateCount++;
+                document.getElementById('updateSpeed').textContent = `⚡ ${this.updateCount} updates`;
+            }
+            
+            startMonitoring() {
+                // Update every 100ms for real-time feel
+                setInterval(() => {
+                    this.loadAIState();
+                }, 100);
+                
+                console.log('🚀 Live monitoring started - 100ms updates');
+            }
+        }
+        
+        // Start the monitor when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Page loaded, starting AI monitor...');
+            try {
+                new LiveAIMonitor();
+                console.log('✅ AI Monitor initialized successfully');
+            } catch (error) {
+                console.error('❌ Failed to initialize AI Monitor:', error);
+            }
+        });
+    </script>
+</body>
+</html>

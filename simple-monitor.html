@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚀 AI CRYPTO TRADING - LIVE NEURAL MONITOR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: radial-gradient(circle at 20% 80%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+                        linear-gradient(135deg, #000000, #0a0a0a, #001a0a, #000d1a);
+            color: #00ff41;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .header {
+            padding: 20px;
+            border-bottom: 2px solid #00ff41;
+            background: rgba(0, 0, 0, 0.8);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .status-bar span {
+            padding: 8px 15px;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+            background: rgba(0, 255, 65, 0.1);
+            font-weight: bold;
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .section {
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+        
+        .trading-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #00ff41;
+        }
+        
+        .trade-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 AI CRYPTO TRADING - LIVE NEURAL MONITOR</h1>
+        <div class="status-bar">
+            <span id="connectionStatus">🔴 CONNECTING...</span>
+            <span id="aiGeneration">Gen: 0 | Cycle: 0</span>
+            <span id="totalPortfolio">Portfolio: $0.00</span>
+            <span id="marketPrice">Market: $0.00</span>
+            <span id="updateSpeed">⚡ LIVE</span>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🧠 NEURAL AI TRADERS</h2>
+        <div id="neuralGrid">Loading AI traders...</div>
+    </div>
+    
+    <div class="section">
+        <h2>💰 LIVE WALLET BALANCES</h2>
+        <div id="walletDisplay">Loading wallets...</div>
+    </div>
+    
+    <div class="section">
+        <h2>📋 LIVE TRADING ACTIVITY</h2>
+        <div class="trading-log" id="tradingLog">
+            <div class="trade-entry">🚀 Starting live monitor...</div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 Simple AI Monitor Starting...');
+        
+        let updateCount = 0;
+        
+        async function loadAIData() {
+            try {
+                console.log(`🔄 Loading AI data... (Update #${updateCount})`);
+                
+                const response = await fetch('/ai-state.json?' + Date.now());
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ AI data received:', data);
+                
+                // Update status bar
+                document.getElementById('connectionStatus').innerHTML = '🟢 LIVE AI CONNECTED';
+                document.getElementById('aiGeneration').innerHTML = `Gen: ${data.generation} | Cycle: ${data.cycle}`;
+                
+                // Calculate portfolio
+                let totalUSDT = 0;
+                if (data.wallets) {
+                    totalUSDT = data.wallets.USDT || 0;
+                    if (data.wallets.BTC && data.market?.price) {
+                        totalUSDT += (data.wallets.BTC * data.market.price);
+                    }
+                }
+                document.getElementById('totalPortfolio').innerHTML = `Portfolio: $${totalUSDT.toFixed(2)}`;
+                document.getElementById('marketPrice').innerHTML = `Market: $${data.market?.price || 0}`;
+                
+                // Show traders
+                if (data.traders) {
+                    const traderHTML = data.traders.map((trader, i) => 
+                        `<div style="margin:10px; padding:10px; border:1px solid #00ff41; border-radius:5px;">
+                            🤖 Trader ${i+1}: Score ${trader.score?.toFixed(2) || 0} | 
+                            Aggression: ${(trader.aggression * 100).toFixed(0)}% |
+                            Risk: ${(trader.riskTolerance * 100).toFixed(0)}%
+                        </div>`
+                    ).join('');
+                    document.getElementById('neuralGrid').innerHTML = traderHTML;
+                }
+                
+                // Show wallets
+                if (data.wallets) {
+                    const walletHTML = Object.entries(data.wallets).map(([coin, amount]) => 
+                        `<div style="margin:5px 0; padding:5px; border-bottom:1px solid rgba(0,255,65,0.3);">
+                            💰 ${coin}: ${typeof amount === 'number' ? amount.toFixed(4) : amount}
+                        </div>`
+                    ).join('');
+                    document.getElementById('walletDisplay').innerHTML = walletHTML;
+                }
+                
+                // Show recent trades
+                if (data.recentTrades && data.recentTrades.length > 0) {
+                    const tradesHTML = data.recentTrades.slice(-10).map(trade => 
+                        `<div class="trade-entry">
+                            ${trade.type === 'BUY' ? '🟢' : '🔴'} 
+                            ${trade.type} ${trade.amount} BTC @ $${trade.price} 
+                            (${trade.timestamp ? new Date(trade.timestamp).toLocaleTimeString() : 'now'})
+                        </div>`
+                    ).join('');
+                    document.getElementById('tradingLog').innerHTML = tradesHTML;
+                }
+                
+                updateCount++;
+                console.log(`✅ Update #${updateCount} complete`);
+                
+            } catch (error) {
+                console.error('❌ Error loading AI data:', error);
+                document.getElementById('connectionStatus').innerHTML = '🔴 CONNECTION ERROR';
+            }
+        }
+        
+        // Start monitoring
+        console.log('⏰ Starting 1-second updates...');
+        loadAIData(); // Initial load
+        setInterval(loadAIData, 1000); // Update every second
+        
+    </script>
+</body>
+</html>

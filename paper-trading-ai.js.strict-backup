@@ -1,0 +1,1103 @@
+#!/usr/bin/env node
+
+const WebSocket = require('ws');
+require('dotenv').config();
+const fs = require('fs');
+
+// 🔍 MULTI-MARKET SCANNER - Find the most profitable trading opportunities
+class MarketScanner {
+    constructor() {
+        this.ws = null;
+        this.connected = false;
+        this.activeMarket = 'SOL/USD';
+        
+        // Track multiple markets for best opportunities - EXPANDED COVERAGE!
+        this.markets = {
+            // Major Coins (Top 10)
+            'BTC/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'ETH/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'SOL/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'XRP/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'ADA/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            
+            // Layer 1s & DeFi Giants
+            'AVAX/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'MATIC/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'DOT/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'ATOM/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'LINK/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            
+            // Meme Coins (High Volatility)
+            'DOGE/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'SHIB/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            
+            // DeFi Tokens
+            'UNI/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'AAVE/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'MKR/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'COMP/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            
+            // Legacy Alts
+            'LTC/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: true },
+            'BCH/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'ETC/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            
+            // Gaming & Metaverse
+            'SAND/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'MANA/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'AXS/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            
+            // Smart Contract Platforms
+            'ALGO/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'FTM/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'NEAR/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            
+            // Other Opportunities
+            'FIL/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'TRX/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'XLM/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'VET/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false },
+            'ICP/USD': { price: 0, volatility: 0, trend: 0, volume: 0, score: 0, history: [], active: false }
+        };
+        
+        this.lastSwitch = Date.now();
+        this.switchCooldown = 120000; // 2 minutes between switches
+        this.tradeCallback = null;
+    }
+    
+    calculateOpportunityScore(market) {
+        const data = this.markets[market];
+        if (data.history.length < 20) return 0;
+        
+        // Score: volatility (50%), trend strength (30%), volume (20%)
+        const volScore = Math.min(data.volatility * 20, 1);
+        const trendScore = Math.abs(data.trend) * 10;
+        const volumeScore = Math.min(data.volume / 50000, 1);
+        
+        return (volScore * 0.5) + (trendScore * 0.3) + (volumeScore * 0.2);
+    }
+    
+    findBestMarket(isHolding = false) {
+        // NEVER switch markets while holding a position!
+        if (isHolding) {
+            return this.activeMarket;
+        }
+        
+        let bestMarket = this.activeMarket;
+        let bestScore = 0;
+        
+        for (const [market, data] of Object.entries(this.markets)) {
+            if (!data.active) continue;
+            
+            data.score = this.calculateOpportunityScore(market);
+            if (data.score > bestScore) {
+                bestScore = data.score;
+                bestMarket = market;
+            }
+        }
+        
+        // Switch if significantly better market found
+        const timeSinceSwitch = Date.now() - this.lastSwitch;
+        const currentScore = this.markets[this.activeMarket].score;
+        
+        if (timeSinceSwitch > this.switchCooldown && bestScore > currentScore * 1.3) {
+            if (bestMarket !== this.activeMarket) {
+                console.log(`\n🔄 MARKET SWITCH: ${this.activeMarket} → ${bestMarket}`);
+                console.log(`   Score: ${currentScore.toFixed(3)} → ${bestScore.toFixed(3)} (+${((bestScore/currentScore - 1) * 100).toFixed(0)}%)`);
+                this.activeMarket = bestMarket;
+                this.lastSwitch = Date.now();
+                
+                // Activate new market if not active
+                if (!this.markets[bestMarket].active) {
+                    this.markets[bestMarket].active = true;
+                    this.subscribeToMarket(bestMarket);
+                }
+            }
+        }
+        
+        return bestMarket;
+    }
+    
+    subscribeToMarket(market) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                event: 'subscribe',
+                pair: [market],
+                subscription: { name: 'trade' }
+            }));
+        }
+    }
+    
+    connect() {
+        return new Promise((resolve) => {
+            console.log('🌐 Connecting to Kraken WebSocket...');
+            
+            this.ws = new WebSocket('wss://ws.kraken.com');
+            
+            this.ws.on('open', () => {
+                console.log('✅ Connected to Kraken WebSocket');
+                this.connected = true;
+                
+                // Subscribe to ALL markets for monitoring
+                const allPairs = Object.keys(this.markets);
+                this.ws.send(JSON.stringify({
+                    event: 'subscribe',
+                    pair: allPairs,
+                    subscription: { name: 'ticker' }
+                }));
+                
+                // Subscribe to trades on active markets
+                const activePairs = Object.keys(this.markets).filter(m => this.markets[m].active);
+                this.ws.send(JSON.stringify({
+                    event: 'subscribe',
+                    pair: activePairs,
+                    subscription: { name: 'trade' }
+                }));
+                
+                console.log(`📊 Monitoring ${allPairs.length} markets | Trading ${activePairs.length} active`);
+                resolve(true);
+            });
+            
+            this.ws.on('message', (data) => {
+                try {
+                    const msg = JSON.parse(data);
+                    
+                    // Ticker updates
+                    if (Array.isArray(msg) && msg[2] === 'ticker') {
+                        const ticker = msg[1];
+                        const pair = msg[3];
+                        
+                        if (this.markets[pair]) {
+                            const price = parseFloat(ticker.c[0]);
+                            const volume = parseFloat(ticker.v[1]);
+                            
+                            this.markets[pair].price = price;
+                            this.markets[pair].volume = volume;
+                            this.markets[pair].history.push({ price, time: Date.now() });
+                            
+                            if (this.markets[pair].history.length > 100) {
+                                this.markets[pair].history.shift();
+                            }
+                            
+                            // Calculate volatility and trend
+                            if (this.markets[pair].history.length >= 30) {
+                                const prices = this.markets[pair].history.map(h => h.price);
+                                const avg = prices.reduce((a, b) => a + b) / prices.length;
+                                
+                                // Volatility
+                                const variance = prices.reduce((sum, p) => sum + Math.pow(p - avg, 2), 0) / prices.length;
+                                this.markets[pair].volatility = Math.sqrt(variance) / avg;
+                                
+                                // Trend
+                                const oldAvg = prices.slice(0, 15).reduce((a, b) => a + b) / 15;
+                                const newAvg = prices.slice(-15).reduce((a, b) => a + b) / 15;
+                                this.markets[pair].trend = (newAvg - oldAvg) / oldAvg;
+                            }
+                        }
+                    }
+                    
+                    // Trade updates
+                    if (Array.isArray(msg) && msg[2] === 'trade') {
+                        const pair = msg[3];
+                        if (pair === this.activeMarket && this.tradeCallback) {
+                            const trades = msg[1];
+                            trades.forEach(trade => {
+                                const [price, volume, timestamp, side] = trade;
+                                this.tradeCallback({
+                                    pair,
+                                    price: parseFloat(price),
+                                    volume: parseFloat(volume),
+                                    side: side === 'b' ? 'buy' : 'sell',
+                                    timestamp: parseFloat(timestamp) * 1000
+                                });
+                            });
+                        }
+                    }
+                } catch (err) {
+                    // Ignore parse errors
+                }
+            });
+            
+            this.ws.on('error', (err) => {
+                console.log('⚠️ WebSocket error:', err.message);
+            });
+            
+            this.ws.on('close', () => {
+                console.log('🔌 Connection closed. Reconnecting...');
+                this.connected = false;
+                setTimeout(() => this.connect(), 5000);
+            });
+        });
+    }
+    
+    getCurrentPrice() {
+        return this.markets[this.activeMarket].price || 0;
+    }
+    
+    getPriceHistory() {
+        return this.markets[this.activeMarket].history || [];
+    }
+    
+    getMarketData() {
+        const market = this.markets[this.activeMarket];
+        return {
+            price: market.price,
+            volatility: market.volatility,
+            trend: market.trend,
+            volume: market.volume,
+            score: market.score,
+            history: market.history
+        };
+    }
+}
+
+class WorldClassTradingAI {
+    constructor(budget = 19) {
+        this.budget = budget;
+        this.scanner = new MarketScanner();
+        
+        this.wallets = { main: budget * 0.3, trading: budget * 0.7 };  // 70% for trading (need $10+ for real trading)
+        
+        this.brain = {
+            buyThreshold: 0.001,         // Buy on 0.1% dips (AGGRESSIVE)
+            buyAggression: 1.0,          // MAXIMUM aggression
+            buyMomentum: 0.7,            
+            sellThreshold: 0.006,        // Sell at 0.6% profit (0.08% net after fees)
+            sellAggression: 0.95,        // Quick exits
+            riskTolerance: 0.8,          // HIGH risk for more trades
+            patience: 5,                 
+            adaptationRate: 0.25,        // Fast learning
+            memoryDepth: 30,             // More memory
+            trendFollowing: 0.7,         // Strong trend rider
+            volumeWeight: 0.5,           // Volume matters
+            winStreak: 0,
+            lossStreak: 0,
+            bestProfit: 0,
+            worstLoss: 0,
+            scalpingMode: true,          // SCALPING MODE for quick profits
+            momentumThreshold: 0.001     
+        };
+        
+        this.settings = {
+            maxTradeSize: 0.15,          // 15% per trade (~$2.85) - MORE aggressive
+            tradingFee: 0.0026,
+            checkInterval: 1000,
+            evolutionFrequency: 999999,
+            maxPositions: 3,             // 🎯 Max 3 positions (focus > quantity)
+            minDataPoints: 30,           // 🎯 30 seconds - Balance patience with action
+            maxConsecutiveLosses: 3,     // 🎯 STOP after 3 losses (preserve capital!)
+            
+            strategies: {
+                scalping: {
+                    name: 'QUICK SCALP',
+                    minProfit: 0.006,       // 🎯 0.6% minimum (beats fees)
+                    targetProfit: 0.010,    // 🎯 1.0% target
+                    stopLoss: 0.006,        // -0.6% stop
+                    trailingStop: 0.003,    // 0.3% trail
+                    maxHoldTime: 180,       // 🎯 3 minutes MAX
+                    quickExit: 60           // Exit bad entries in 1 minute
+                },
+                meanReversion: {
+                    name: 'VALUE BUY',
+                    minProfit: 0.008,       // 🎯 0.8% minimum
+                    targetProfit: 0.015,    // 🎯 1.5% target
+                    stopLoss: 0.007,        // -0.7% stop
+                    trailingStop: 0.004,    // 0.4% trail
+                    maxHoldTime: 300,       // 🎯 5 minutes MAX
+                    quickExit: 90
+                },
+                trendFollowing: {
+                    name: 'TREND RIDE',
+                    minProfit: 0.008,       // 🎯 0.8% minimum
+                    targetProfit: 0.015,    // 🎯 1.5% target
+                    stopLoss: 0.007,        // -0.7% stop
+                    trailingStop: 0.004,    // 0.4% trail
+                    maxHoldTime: 300,       // 🎯 5 minutes MAX
+                    quickExit: 90
+                },
+                breakout: {
+                    name: 'MOMENTUM',
+                    minProfit: 0.010,       // 🎯 1.0% minimum
+                    targetProfit: 0.020,    // 🎯 2.0% target
+                    stopLoss: 0.008,        // -0.8% stop
+                    trailingStop: 0.005,    // 0.5% trail
+                    maxHoldTime: 600,       // 🎯 10 minutes MAX
+                    quickExit: 120
+                }
+            }
+        };
+        
+        this.state = {
+            priceHistory: [],            // Keep for backwards compatibility
+            volumeHistory: [],
+            portfolio: {},               // NEW: { 'SOL/USD': {holdings, buyPrice, peak, buyCycle}, ... }
+            totalTrades: 0,
+            wins: 0,
+            losses: 0,
+            profitHistory: [],
+            currentBalance: budget,
+            generation: 1,
+            cycle: 0,
+            totalProfit: 0,
+            totalFeesPaid: 0,
+            peakBalance: budget,
+            drawdown: 0
+        };
+        
+        this.tradeHistory = [];
+        this.traderPatterns = {};  // Track individual trader behaviors
+        this.marketIntelligence = {
+            totalMarketTrades: 0,
+            largeTraders: {},      // Traders with >10 SOL trades
+            whaleActivity: {},     // Traders with >50 SOL trades
+            traderTiming: {},      // When traders are most active
+            successPatterns: {}    // Patterns that led to wins
+        };
+        this.stateFile = 'paper-trading-state.json';
+        this.historicalDataFile = 'ai-historical-data.json';
+        this.loadState();
+        this.loadHistoricalData();
+    }
+
+    loadState() {
+        try {
+            if (fs.existsSync(this.stateFile)) {
+                const saved = JSON.parse(fs.readFileSync(this.stateFile));
+                this.state = saved.state;
+                this.brain = saved.brain;
+                this.wallets = saved.wallets;
+                this.traderPatterns = saved.traderPatterns || {};
+                this.marketIntelligence = saved.marketIntelligence || this.marketIntelligence;
+                
+                // MIGRATE old single-holding format to portfolio
+                if (!this.state.portfolio) {
+                    this.state.portfolio = {};
+                    // If old state had holdings, migrate to SOL/USD position
+                    if (this.state.holdings && this.state.holdings > 0) {
+                        this.state.portfolio['SOL/USD'] = {
+                            holdings: this.state.holdings,
+                            buyPrice: this.state.buyPrice || 0,
+                            peak: this.state.peakPriceWhileHolding || 0,
+                            buyCycle: this.state.lastBuyCycle || this.state.cycle
+                        };
+                    }
+                    // Clean up old single-holding fields
+                    delete this.state.holdings;
+                    delete this.state.buyPrice;
+                    delete this.state.peakPriceWhileHolding;
+                    delete this.state.lastBuyCycle;
+                    delete this.state.currentPrice;
+                }
+                
+                console.log('Loaded Gen ' + this.state.generation + ' - Balance: $' + this.state.currentBalance.toFixed(2) + ' | Trades: ' + this.state.totalTrades + ' | Win Rate: ' + this.getWinRate() + '%');
+                console.log('Portfolio: ' + this.getPositionCount() + ' positions | Market Intelligence: ' + Object.keys(this.traderPatterns).length + ' traders tracked');
+            }
+        } catch (error) {
+            console.log('Starting fresh AI training session');
+        }
+    }
+
+    loadHistoricalData() {
+        try {
+            if (fs.existsSync(this.historicalDataFile)) {
+                const data = JSON.parse(fs.readFileSync(this.historicalDataFile));
+                this.tradeHistory = data.tradeHistory || [];
+                console.log('Loaded ' + this.tradeHistory.length + ' historical trades (ALL TIME)');
+            }
+        } catch (error) {
+            console.log('No historical data found - starting fresh');
+        }
+    }
+
+    // Portfolio management helpers
+    getPositionCount() {
+        return Object.keys(this.state.portfolio).length;
+    }
+
+    hasPosition(market) {
+        return this.state.portfolio[market] && this.state.portfolio[market].holdings > 0;
+    }
+
+    getTotalPortfolioValue() {
+        let total = this.wallets.main + this.wallets.trading;
+        for (const [market, position] of Object.entries(this.state.portfolio)) {
+            const currentPrice = this.scanner.markets[market]?.price || 0;
+            total += position.holdings * currentPrice;
+        }
+        return total;
+    }
+
+    getPortfolioSummary() {
+        const positions = [];
+        for (const [market, position] of Object.entries(this.state.portfolio)) {
+            if (position.holdings > 0) {
+                const currentPrice = this.scanner.markets[market]?.price || 0;
+                const currentValue = position.holdings * currentPrice;
+                const costBasis = position.holdings * position.buyPrice;
+                const profit = ((currentValue - costBasis) / costBasis);
+                positions.push({
+                    market,
+                    holdings: position.holdings,
+                    buyPrice: position.buyPrice,
+                    currentPrice,
+                    profit: profit * 100,
+                    value: currentValue,
+                    holdTime: this.state.cycle - position.buyCycle
+                });
+            }
+        }
+        return positions;
+    }
+
+    saveState() {
+        // Save current state (light file)
+        fs.writeFileSync(this.stateFile, JSON.stringify({
+            state: this.state,
+            brain: this.brain,
+            wallets: this.wallets,
+            traderPatterns: this.traderPatterns,
+            marketIntelligence: this.marketIntelligence,
+            timestamp: new Date().toISOString()
+        }, null, 2));
+        
+        // Save ALL historical trades separately (growing database)
+        fs.writeFileSync(this.historicalDataFile, JSON.stringify({
+            tradeHistory: this.tradeHistory,
+            totalTrades: this.tradeHistory.length,
+            firstTrade: this.tradeHistory[0]?.timestamp || null,
+            lastTrade: this.tradeHistory[this.tradeHistory.length - 1]?.timestamp || null,
+            updated: new Date().toISOString()
+        }, null, 2));
+    }
+
+    async start() {
+        console.log('\n🚀═══════════════════════════════════════════════════');
+        console.log('   MULTI-COIN PORTFOLIO AI - PAPER TRADING MODE');
+        console.log('═══════════════════════════════════════════════════🚀');
+        console.log('💰 Budget: $' + this.budget);
+        console.log('💼 Wallet: Main $' + this.wallets.main.toFixed(2) + ' | Trading $' + this.wallets.trading.toFixed(2));
+        console.log('\n🧠 AI CAPABILITIES:');
+        console.log('   ✓ Multi-market opportunity scanner (10 markets)');
+        console.log('   ✓ Trade MULTIPLE coins simultaneously (up to ' + this.settings.maxPositions + ')');
+        console.log('   ✓ Portfolio diversification & risk management');
+        console.log('   ✓ Neural network decision making');
+        console.log('   ✓ Momentum & volatility analysis');
+        console.log('   ✓ Performance-based evolution');
+        console.log('   ✓ Whale activity tracking (>$1000 trades)');
+        console.log('   ✓ Trailing stop-loss protection per position');
+        console.log('   ✓ INFINITE trade history database');
+        console.log('\n📊 PAPER TRADING MODE - Zero risk practice');
+        console.log('🎯 Strategy: Only take profitable trades\n');
+        
+        try {
+            await this.scanner.connect();
+            this.scanner.tradeCallback = (trade) => this.analyzeMarketTrade(trade);
+            console.log('✅ Multi-market scanner active');
+            console.log('🤖 AI hunting for profits...\n');
+        } catch (error) {
+            console.error('❌ Connection error:', error.message);
+            process.exit(1);
+        }
+        
+        setInterval(() => this.aiTradingCycle(), this.settings.checkInterval);
+        setInterval(() => this.saveState(), 10000);
+        setInterval(() => this.showStats(), 30000);
+    }
+
+    handleMarketData() {
+        // Get data from the active market
+        const marketData = this.scanner.getMarketData();
+        this.state.currentPrice = marketData.price;
+        
+        if (marketData.history.length > 0) {
+            this.state.priceHistory = marketData.history.slice(-120); // Keep last 120 (need 60 minimum)
+        }
+    }
+
+    analyzeMarketTrade(trade) {
+        // Track EVERY trader on Kraken to learn patterns
+        this.marketIntelligence.totalMarketTrades++;
+        
+        const traderId = 'T' + Date.now() + Math.random();  // Anonymous ID
+        const tradeSize = trade.volume;
+        const tradeType = trade.side;
+        const tradeValue = tradeSize * trade.price;
+        const hour = new Date().getHours();
+        
+        // Track large traders (potential whales)
+        if (tradeSize > 10) {
+            if (!this.marketIntelligence.largeTraders[traderId]) {
+                this.marketIntelligence.largeTraders[traderId] = {
+                    totalVolume: 0,
+                    trades: [],
+                    buyCount: 0,
+                    sellCount: 0,
+                    avgPrice: 0
+                };
+            }
+            
+            const trader = this.marketIntelligence.largeTraders[traderId];
+            trader.totalVolume += tradeSize;
+            trader.trades.push({ price: trade.price, volume: tradeSize, side: tradeType, time: Date.now() });
+            if (tradeType === 'buy') trader.buyCount++;
+            else trader.sellCount++;
+            
+            // Detect whale patterns (>$1000 trades)
+            if (tradeValue > 1000) {
+                if (!this.marketIntelligence.whaleActivity[traderId]) {
+                    this.marketIntelligence.whaleActivity[traderId] = [];
+                }
+                this.marketIntelligence.whaleActivity[traderId].push({
+                    price: trade.price,
+                    volume: tradeSize,
+                    value: tradeValue,
+                    side: tradeType,
+                    time: Date.now()
+                });
+                
+                // Log whale activity with enhanced formatting
+                const whaleEmoji = tradeValue > 5000 ? '🐋🐋🐋' : tradeValue > 2000 ? '🐋🐋' : '🐋';
+                const directionEmoji = tradeType === 'buy' ? '🟢📈' : '🔴📉';
+                console.log(whaleEmoji + ' WHALE DETECTED ' + directionEmoji);
+                console.log('   Action: ' + tradeType.toUpperCase() + ' | Volume: ' + tradeSize.toFixed(2) + ' SOL');
+                console.log('   Value: $' + tradeValue.toFixed(0) + ' @ $' + trade.price.toFixed(2));
+                console.log('   Impact: ' + (tradeType === 'buy' ? 'BULLISH PRESSURE' : 'BEARISH PRESSURE'));
+            }
+        }
+        
+        // Track trading patterns by hour
+        if (!this.marketIntelligence.traderTiming[hour]) {
+            this.marketIntelligence.traderTiming[hour] = { buys: 0, sells: 0, volume: 0 };
+        }
+        this.marketIntelligence.traderTiming[hour][tradeType === 'buy' ? 'buys' : 'sells']++;
+        this.marketIntelligence.traderTiming[hour].volume += tradeSize;
+        
+        // Use trader intelligence in decisions
+        this.brain.marketSentiment = this.calculateMarketSentiment();
+    }
+
+    calculateMarketSentiment() {
+        const hour = new Date().getHours();
+        const hourData = this.marketIntelligence.traderTiming[hour];
+        
+        if (!hourData) return 0.5;  // Neutral
+        
+        const totalTrades = hourData.buys + hourData.sells;
+        if (totalTrades === 0) return 0.5;
+        
+        // More buys = bullish, more sells = bearish
+        return hourData.buys / totalTrades;
+    }
+
+
+    aiTradingCycle() {
+        this.state.cycle++;
+        
+        // Update market data from scanner
+        this.handleMarketData();
+        
+        // PORTFOLIO TRADING: Check ALL positions for sell opportunities
+        const positions = Object.keys(this.state.portfolio);
+        if (positions.length > 0) {
+            for (const market of positions) {
+                // Switch to this market to get current price
+                this.scanner.activeMarket = market;
+                this.state.currentPrice = this.scanner.getCurrentPrice();
+                
+                if (this.state.currentPrice > 0) {
+                    this.evaluateSell(market);
+                }
+            }
+        }
+        
+        // PORTFOLIO TRADING: If under max positions, look for buy opportunities
+        if (this.getPositionCount() < this.settings.maxPositions) {
+            // If we don't have enough data yet, STAY with current market to build history
+            const currentMarketData = this.scanner.getMarketData();
+            const needsMoreData = currentMarketData.history.length < this.settings.minDataPoints;
+            
+            let bestMarket;
+            if (needsMoreData && this.state.priceHistory.length > 0) {
+                // STAY with current market to keep building data
+                bestMarket = this.scanner.activeMarket;
+            } else {
+                // Find best market opportunity (excluding markets we already hold)
+                const heldMarkets = Object.keys(this.state.portfolio);
+                bestMarket = this.scanner.findBestMarket(false);  // Don't lock to current
+                
+                // Don't buy if we already hold this market
+                if (heldMarkets.includes(bestMarket)) {
+                    return;  // Skip buying - we already have this one
+                }
+            }
+            
+            // CRITICAL: Switch to the best market BEFORE getting price!
+            this.scanner.activeMarket = bestMarket;
+            this.state.currentPrice = this.scanner.getCurrentPrice();
+            if (this.state.currentPrice > 0) {
+                this.evaluateBuy(bestMarket);
+            }
+        }
+        
+        if (this.state.cycle % this.settings.evolutionFrequency === 0) {
+            this.evolveAI();
+        }
+        
+        // Show market scanner status every 2 minutes
+        if (this.state.cycle % 120 === 0) {
+            this.showMarketScanner();
+        }
+    }
+    
+    showMarketScanner() {
+        console.log('\n📊 MARKET SCANNER STATUS:');
+        const activeMarket = this.scanner.activeMarket;
+        const marketData = this.scanner.markets[activeMarket];
+        console.log(`   🎯 Active: ${activeMarket} @ $${marketData.price.toFixed(2)}`);
+        console.log(`   📈 Volatility: ${(marketData.volatility * 100).toFixed(2)}% | Trend: ${(marketData.trend * 100).toFixed(2)}%`);
+        console.log(`   💎 Score: ${marketData.score.toFixed(3)}`);
+        
+        // Show top 3 opportunities
+        const sorted = Object.entries(this.scanner.markets)
+            .filter(([_, data]) => data.active && data.score > 0)
+            .sort((a, b) => b[1].score - a[1].score)
+            .slice(0, 3);
+        
+        if (sorted.length > 0) {
+            console.log('   🏆 Top Opportunities:');
+            sorted.forEach(([pair, data], i) => {
+                console.log(`      ${i+1}. ${pair}: ${data.score.toFixed(3)} (Vol: ${(data.volatility*100).toFixed(2)}%)`);
+            });
+        }
+        console.log('');
+    }
+
+    evaluateBuy(market) {
+        // Check data points (15 seconds of data)
+        if (this.state.priceHistory.length < this.settings.minDataPoints) {
+            if (this.state.cycle % 15 === 0) {
+                console.log(`📚 STUDYING ${market}... (${this.state.priceHistory.length}/${this.settings.minDataPoints} points)`);
+            }
+            return;
+        }
+        
+        // Check capital
+        if (this.wallets.trading < 5) return;
+        
+        // 🛑 CAPITAL PRESERVATION: Stop after consecutive losses
+        const recentTrades = this.state.profitHistory.slice(-10);
+        const consecutiveLosses = this.getConsecutiveLosses(recentTrades);
+        if (consecutiveLosses >= this.settings.maxConsecutiveLosses) {
+            if (this.state.cycle % 60 === 0) {
+                console.log(`\n🛑 CAPITAL PRESERVATION MODE`);
+                console.log(`   Lost ${consecutiveLosses} in a row - Taking a break`);
+                console.log(`   Balance: $${this.state.currentBalance.toFixed(2)} (protecting capital)`);
+            }
+            return;
+        }
+        
+        // Extract price data
+        const allPrices = this.state.priceHistory.map(p => p.price);
+        const currentPrice = this.state.currentPrice;
+        const recentPrices = allPrices.slice(-30);  // 30 seconds of data
+        
+        // Calculate range and position
+        const recentLow = Math.min(...recentPrices);
+        const recentHigh = Math.max(...recentPrices);
+        const priceRange = recentHigh - recentLow;
+        const rangePct = priceRange / recentLow;  // Range as percentage
+        const positionInRange = priceRange > 0 ? (currentPrice - recentLow) / priceRange : 0.5;
+        
+        // Momentum indicators
+        const last10 = recentPrices.slice(-10);
+        const last5 = recentPrices.slice(-5);
+        const last3 = recentPrices.slice(-3);
+        const momentum10 = last10.length >= 10 ? (last10[9] - last10[0]) / last10[0] : 0;
+        const momentum5 = last5.length >= 5 ? (last5[4] - last5[0]) / last5[0] : 0;
+        const momentum3 = last3.length >= 3 ? (last3[2] - last3[0]) / last3[0] : 0;
+        const strongMomentum = momentum5 > 0.005;  // 0.5%+ movement
+        const explosiveMomentum = momentum3 > 0.010;  // 1.0%+ in 3 seconds!
+        
+        // 🎯 SWING TRADER LOGIC - Wait for BIG setups!
+        let shouldBuy = false;
+        let buyReason = '';
+        let selectedStrategy = 'scalping';
+        
+        // 🎯 RULE 1: Bottom 10% + STRONG momentum (0.5%+) = VALUE BUY
+        if (positionInRange < 0.10 && strongMomentum) {
+            shouldBuy = true;
+            buyReason = '💎 DEEP VALUE: Bottom 10% + 0.5%+ momentum';
+            selectedStrategy = 'meanReversion';
+        }
+        
+        // 🎯 RULE 2: EXPLOSIVE 1%+ breakout = MOMENTUM BUY
+        if (!shouldBuy && explosiveMomentum) {
+            shouldBuy = true;
+            buyReason = '� EXPLOSIVE: 1%+ breakout detected!';
+            selectedStrategy = 'breakout';
+        }
+        
+        // 🎯 RULE 3: Bottom 20% + 0.8%+ rise = REVERSION BUY
+        if (!shouldBuy && positionInRange < 0.20 && momentum5 > 0.008) {
+            shouldBuy = true;
+            buyReason = '🔄 REVERSION: Low price + 0.8%+ momentum';
+            selectedStrategy = 'meanReversion';
+        }
+        
+        // 🎯 RULE 4: Strong 1%+ trend from mid-range = TREND BUY  
+        if (!shouldBuy && momentum10 > 0.010 && positionInRange < 0.50) {
+            shouldBuy = true;
+            buyReason = '� STRONG TREND: 1%+ rise detected';
+            selectedStrategy = 'trendFollowing';
+        }
+        // DEBUG: Show analysis periodically
+        if (this.state.cycle % 30 === 0 && !shouldBuy) {
+            console.log(`\n[MULTI-STRATEGY] ${market}:`);
+            console.log(`   💰 Capital: $${this.wallets.trading.toFixed(2)}`);
+            console.log(`   📊 Position: ${(positionInRange*100).toFixed(0)}% | Range: ${(rangePct*100).toFixed(2)}%`);
+            console.log(`   📈 Momentum: 3s=${(momentum3*100).toFixed(2)}% | 5s=${(momentum5*100).toFixed(2)}% | 10s=${(momentum10*100).toFixed(2)}%`);
+            console.log(`   💡 Scanning for STRONG setups (1-3% moves)...`);
+        }
+        
+        if (shouldBuy) {
+            const strategyConfig = this.settings.strategies[selectedStrategy];
+            const tradeAmount = Math.min(this.wallets.trading, this.budget * this.settings.maxTradeSize);
+            const buyFee = tradeAmount * this.settings.tradingFee;
+            const netSpend = tradeAmount + buyFee;
+            const assetAmount = tradeAmount / currentPrice;
+            
+            console.log('\n🟢═══════════════════════════════════════════════════');
+            console.log('   BUY SIGNAL - ' + strategyConfig.name);
+            console.log('═══════════════════════════════════════════════════🟢');
+            console.log('📊 Market: ' + market + ' @ $' + currentPrice.toFixed(4));
+            console.log('🎯 Strategy: ' + buyReason);
+            console.log('📈 Market Analysis:');
+            console.log('   Position: ' + (positionInRange*100).toFixed(0) + '% | Range: ' + (rangePct*100).toFixed(2) + '%');
+            console.log('   Trend: ' + (trendUp ? 'UP ↗' : 'FLAT/DOWN') + ' | Momentum: ' + (momentum5*100).toFixed(2) + '%');
+            console.log('💰 Trade Details:');
+            console.log('   Buying: ' + assetAmount.toFixed(6) + ' ' + market.split('/')[0]);
+            console.log('   Amount: $' + tradeAmount.toFixed(2) + ' + $' + buyFee.toFixed(4) + ' fee');
+            console.log('   Total Cost: $' + netSpend.toFixed(2));
+            console.log('📈 Profit Targets:');
+            console.log('   ✅ Min: +' + (strategyConfig.minProfit*100).toFixed(1) + '%');
+            console.log('   🎯 Target: +' + (strategyConfig.targetProfit*100).toFixed(1) + '%');
+            console.log('   🛑 Stop: -' + (strategyConfig.stopLoss*100).toFixed(1) + '%');
+            
+            this.wallets.trading -= netSpend;
+            this.state.totalFeesPaid += buyFee;
+            
+            this.state.portfolio[market] = {
+                holdings: assetAmount,
+                buyPrice: currentPrice,
+                peak: currentPrice,
+                buyCycle: this.state.cycle,
+                strategy: selectedStrategy,
+                strategyConfig: strategyConfig,
+                entryReason: buyReason
+            };
+            
+            console.log('✅ Position opened! Portfolio: ' + this.getPositionCount() + '/' + this.settings.maxPositions);
+            console.log('═══════════════════════════════════════════════════\n');
+        }
+    }
+
+    evaluateSell(market) {
+        const position = this.state.portfolio[market];
+        if (!position || position.holdings === 0) return;
+        
+        // Update peak price
+        if (this.state.currentPrice > position.peak) {
+            position.peak = this.state.currentPrice;
+        }
+        
+        const currentValue = position.holdings * this.state.currentPrice;
+        const costBasis = position.holdings * position.buyPrice;
+        const grossProfit = ((currentValue - costBasis) / costBasis);
+        const holdTime = this.state.cycle - position.buyCycle;
+        const holdTimeSeconds = holdTime * (this.settings.checkInterval / 1000);
+        
+        // Get strategy config (default to scalping if not set)
+        const strategyConfig = position.strategyConfig || this.settings.strategies.scalping;
+        const dropFromPeak = ((position.peak - this.state.currentPrice) / position.peak);
+        
+        let shouldSell = false;
+        let exitReason = '';
+        
+        // 🎯 PROFIT TARGET - Hit ideal profit!
+        if (grossProfit >= strategyConfig.targetProfit) {
+            shouldSell = true;
+            exitReason = '🎯 TARGET +' + (strategyConfig.targetProfit*100).toFixed(1) + '%';
+        }
+        // 💰 MINIMUM PROFIT - Take the win
+        else if (grossProfit >= strategyConfig.minProfit) {
+            shouldSell = true;
+            exitReason = '💰 PROFIT +' + (strategyConfig.minProfit*100).toFixed(1) + '%';
+        }
+        
+        // 🛑 STOP LOSS - Cut losses quickly
+        if (grossProfit <= -strategyConfig.stopLoss) {
+            shouldSell = true;
+            exitReason = '🛑 STOP -' + (strategyConfig.stopLoss*100).toFixed(1) + '%';
+        }
+        
+        // 📉 TRAILING STOP - Lock in gains
+        if (grossProfit > 0.003 && dropFromPeak > strategyConfig.trailingStop) {
+            shouldSell = true;
+            exitReason = '📉 TRAIL STOP';
+        }
+        
+        // ⏱️ MAX HOLD TIME - Don't hold losers forever
+        if (holdTimeSeconds > strategyConfig.maxHoldTime && grossProfit < 0) {
+            shouldSell = true;
+            exitReason = '⏱️ MAX HOLD TIME';
+        }
+        
+        // 🚨 QUICK EXIT - Bad entry
+        if (holdTimeSeconds < strategyConfig.quickExit && grossProfit < -0.008) {
+            shouldSell = true;
+            exitReason = '🚨 QUICK EXIT (bad entry)';
+        }
+        
+        if (shouldSell) {
+            const saleValue = currentValue;
+            const sellFee = saleValue * this.settings.tradingFee;
+            const netProceeds = saleValue - sellFee;
+            const netProfit = netProceeds - costBasis;
+            const netProfitPercent = (netProfit / costBasis) * 100;
+            
+            const profitEmoji = netProfit > 0 ? '💰🎉' : netProfit < 0 ? '📉💔' : '⚖️';
+            const resultColor = netProfit > 0 ? '🟢' : '🔴';
+            
+            console.log('\n' + resultColor + '═══════════════════════════════════════════════════');
+            console.log('   SELL - ' + strategyConfig.name);
+            console.log('═══════════════════════════════════════════════════' + resultColor);
+            console.log('📊 Market: ' + market);
+            console.log('🎯 Entry: ' + (position.entryReason || 'N/A'));
+            console.log('🚪 Exit: ' + exitReason);
+            console.log('📊 Trade:');
+            console.log('   Buy: $' + position.buyPrice.toFixed(4) + ' | Sell: $' + this.state.currentPrice.toFixed(4));
+            console.log('   Peak: $' + position.peak.toFixed(4) + ' | Hold: ' + holdTimeSeconds.toFixed(1) + 's');
+            console.log(profitEmoji + ' NET: $' + netProfit.toFixed(4) + ' (' + netProfitPercent.toFixed(2) + '%)');
+            
+            this.wallets.trading += netProceeds;
+            this.state.totalFeesPaid += sellFee;
+            this.state.currentBalance = this.wallets.main + this.wallets.trading;
+            
+            console.log('💼 Balance: $' + this.state.currentBalance.toFixed(2));
+            
+            const isWin = netProfit > 0;
+            if (isWin) {
+                this.state.wins++;
+                this.brain.winStreak++;
+                this.brain.lossStreak = 0;
+                if (grossProfit > this.brain.bestProfit) this.brain.bestProfit = grossProfit;
+                console.log('✅ WIN! Streak: ' + this.brain.winStreak);
+            } else {
+                this.state.losses++;
+                this.brain.lossStreak++;
+                this.brain.winStreak = 0;
+                if (grossProfit < this.brain.worstLoss) this.brain.worstLoss = grossProfit;
+                console.log('❌ LOSS! Streak: ' + this.brain.lossStreak);
+            }
+            
+            this.state.totalTrades++;
+            this.state.totalProfit += netProfit;
+            
+            if (this.state.currentBalance > this.state.peakBalance) {
+                this.state.peakBalance = this.state.currentBalance;
+            }
+            this.state.drawdown = (this.state.peakBalance - this.state.currentBalance) / this.state.peakBalance;
+            
+            const tradeRecord = {
+                tradeNumber: this.tradeHistory.length + 1,
+                market: market,
+                strategy: position.strategy || 'unknown',
+                entryReason: position.entryReason || 'N/A',
+                exitReason: exitReason,
+                buyPrice: position.buyPrice,
+                sellPrice: this.state.currentPrice,
+                peakPrice: position.peak,
+                grossProfit: grossProfit,
+                grossProfitPercent: grossProfit * 100,
+                netProfit: netProfit / costBasis,
+                netProfitPercent: netProfitPercent,
+                profitDollars: netProfit,
+                feesPaid: sellFee + (costBasis * this.settings.tradingFee),
+                holdTime: holdTime,
+                holdTimeSeconds: holdTimeSeconds,
+                volume: position.holdings,
+                generation: this.state.generation,
+                cycle: this.state.cycle,
+                timestamp: new Date().toISOString(),
+                timestampMs: Date.now()
+            };
+            
+            this.tradeHistory.push(tradeRecord);
+            delete this.state.portfolio[market];
+            
+            console.log('═══════════════════════════════════════════════════\n');
+        }
+    }
+
+    evolveAI() {
+        this.state.generation++;
+        const winRate = this.getWinRate();
+        const avgProfit = this.state.totalProfit / Math.max(this.state.totalTrades, 1);
+        
+        console.log('\n🧬═══════════════════════════════════════════════════');
+        console.log('   AI EVOLUTION - Generation ' + this.state.generation);
+        console.log('═══════════════════════════════════════════════════🧬');
+        console.log('📊 Performance Metrics:');
+        console.log('   Win Rate: ' + winRate + '% | Avg Profit/Trade: $' + avgProfit.toFixed(4));
+        console.log('   Balance: $' + this.state.currentBalance.toFixed(2) + ' | ROI: ' + (((this.state.currentBalance - this.budget) / this.budget) * 100).toFixed(2) + '%');
+        console.log('   Win Streak: ' + this.brain.winStreak + ' | Loss Streak: ' + this.brain.lossStreak);
+        
+        if (winRate > 60 && this.brain.winStreak >= 3) {
+            this.brain.buyAggression *= 1.05;
+            this.brain.sellThreshold *= 1.03;
+            this.brain.riskTolerance = Math.min(0.9, this.brain.riskTolerance * 1.05);
+            console.log('🔥 HOT STREAK! Increasing aggression');
+        }
+        else if (winRate < 40 || this.brain.lossStreak >= 2) {
+            this.brain.buyThreshold *= 1.1;
+            this.brain.sellThreshold *= 0.9;
+            this.brain.riskTolerance = Math.max(0.2, this.brain.riskTolerance * 0.95);
+            console.log('❄️ COLD STREAK. Becoming more conservative');
+        }
+        
+        if (this.tradeHistory.length >= 5) {
+            const recentTrades = this.tradeHistory.slice(-10);
+            const recentWinRate = recentTrades.filter(t => t.netProfit > 0).length / recentTrades.length;
+            
+            if (recentWinRate > 0.7) {
+                console.log('✅ Recent performance excellent (' + (recentWinRate*100).toFixed(0) + '% wins in last 10)');
+            } else if (recentWinRate < 0.3) {
+                this.brain.buyThreshold = Math.random() * -0.01 - 0.002;
+                this.brain.sellThreshold = Math.random() * 0.01 + 0.005;
+                console.log('🔄 Poor recent performance. RANDOMIZING strategy');
+            }
+        }
+        
+        if (this.state.drawdown > 0.1) {
+            this.brain.riskTolerance = Math.max(0.1, this.brain.riskTolerance * 0.8);
+            this.brain.sellThreshold *= 0.8;
+            console.log('⚠️ Drawdown ' + (this.state.drawdown*100).toFixed(1) + '% - REDUCING RISK');
+        }
+        
+        if (avgProfit < 0) {
+            this.brain.trendFollowing = 1 - this.brain.trendFollowing;
+            console.log('🔀 FLIPPING STRATEGY: ' + (this.brain.trendFollowing > 0.5 ? 'Trend Following' : 'Contrarian'));
+        }
+        
+        this.brain.buyThreshold = Math.max(-0.05, Math.min(0, this.brain.buyThreshold));
+        this.brain.sellThreshold = Math.max(0.003, Math.min(0.03, this.brain.sellThreshold));
+        this.brain.buyAggression = Math.max(0.1, Math.min(1, this.brain.buyAggression));
+        this.brain.sellAggression = Math.max(0.1, Math.min(1, this.brain.sellAggression));
+        this.brain.riskTolerance = Math.max(0.1, Math.min(0.9, this.brain.riskTolerance));
+        
+        console.log('🧠 New AI Parameters:');
+        console.log('   Buy Threshold: ' + (this.brain.buyThreshold*100).toFixed(2) + '%');
+        console.log('   Sell Threshold: ' + (this.brain.sellThreshold*100).toFixed(2) + '%');
+        console.log('   Risk Tolerance: ' + (this.brain.riskTolerance*100).toFixed(0) + '%');
+        console.log('   Buy Aggression: ' + (this.brain.buyAggression*100).toFixed(0) + '%');
+        console.log('═══════════════════════════════════════════════════\n');
+    }
+
+    getWinRate() {
+        return this.state.totalTrades > 0 ? ((this.state.wins / this.state.totalTrades) * 100).toFixed(1) : 0;
+    }
+    
+    getConsecutiveLosses(recentTrades) {
+        let consecutive = 0;
+        for (let i = recentTrades.length - 1; i >= 0; i--) {
+            if (recentTrades[i] < 0) {
+                consecutive++;
+            } else {
+                break;
+            }
+        }
+        return consecutive;
+    }
+
+    showStats() {
+        const profit = this.state.currentBalance - this.budget;
+        const roi = (profit / this.budget * 100);
+        const netProfit = profit - this.state.totalFeesPaid;  // Profit after all fees
+        const netROI = (netProfit / this.budget * 100);
+        
+        // Calculate ALL-TIME statistics
+        const allTimeWins = this.tradeHistory.filter(t => t.netProfit > 0).length;
+        const allTimeLosses = this.tradeHistory.filter(t => t.netProfit < 0).length;
+        const allTimeWinRate = this.tradeHistory.length > 0 ? (allTimeWins / this.tradeHistory.length * 100).toFixed(1) : 0;
+        
+        console.log('\n🚀═══════════════════════════════════════════════════');
+        console.log('   ADVANCED AI PERFORMANCE REPORT');
+        console.log('═══════════════════════════════════════════════════🚀');
+        console.log('📊 Current Session:');
+        console.log('   Generation: ' + this.state.generation + ' | Cycle: ' + this.state.cycle);
+        console.log('   Balance: $' + this.state.currentBalance.toFixed(2));
+        console.log('   Gross P/L: ' + (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toFixed(4) + ' (' + (roi >= 0 ? '+' : '') + roi.toFixed(2) + '%)');
+        console.log('   Fees Paid: $' + this.state.totalFeesPaid.toFixed(4) + ' (0.52% per trade)');
+        console.log('   Net P/L: ' + (netProfit >= 0 ? '+$' : '-$') + Math.abs(netProfit).toFixed(4) + ' (' + (netROI >= 0 ? '+' : '') + netROI.toFixed(2) + '%)');
+        console.log('   Peak Balance: $' + this.state.peakBalance.toFixed(2));
+        console.log('   Drawdown: ' + (this.state.drawdown*100).toFixed(1) + '%');
+        console.log('💼 Portfolio:');
+        const positionCount = this.getPositionCount();
+        if (positionCount > 0) {
+            console.log('   Positions: ' + positionCount + '/' + this.settings.maxPositions);
+            for (const [market, pos] of Object.entries(this.state.portfolio)) {
+                const currentValue = pos.holdings * this.scanner.markets[market]?.price || 0;
+                const profit = pos.buyPrice > 0 ? ((currentValue / (pos.holdings * pos.buyPrice)) - 1) * 100 : 0;
+                console.log('   ' + market + ': ' + pos.holdings.toFixed(4) + ' (~$' + currentValue.toFixed(2) + ', ' + (profit >= 0 ? '+' : '') + profit.toFixed(2) + '%)');
+            }
+            console.log('   Total Portfolio Value: $' + this.getTotalPortfolioValue().toFixed(2));
+        } else {
+            console.log('   No positions (ready to buy)');
+        }
+        console.log('📈 Trading Stats:');
+        console.log('   Total Trades: ' + this.state.totalTrades);
+        console.log('   Wins: ' + this.state.wins + ' | Losses: ' + this.state.losses);
+        console.log('   Win Rate: ' + this.getWinRate() + '%');
+        console.log('   Best Trade: +' + (this.brain.bestProfit*100).toFixed(2) + '%');
+        console.log('   Worst Trade: ' + (this.brain.worstLoss*100).toFixed(2) + '%');
+        console.log('   Win Streak: ' + this.brain.winStreak + ' | Loss Streak: ' + this.brain.lossStreak);
+        console.log('💹 Market Data:');
+        console.log('   SOL/USD: $' + this.state.currentPrice.toFixed(2));
+        console.log('   Market Sentiment: ' + ((this.brain.marketSentiment || 0.5) * 100).toFixed(0) + '% bullish');
+        console.log('🧠 AI Configuration:');
+        console.log('   Buy Threshold: ' + (this.brain.buyThreshold*100).toFixed(2) + '%');
+        console.log('   Sell Threshold: ' + (this.brain.sellThreshold*100).toFixed(2) + '%');
+        console.log('   Risk Tolerance: ' + (this.brain.riskTolerance*100).toFixed(0) + '%');
+        console.log('   Strategy: ' + (this.brain.trendFollowing > 0.5 ? 'Trend Following' : 'Contrarian'));
+        console.log('---------------------------------------------------');
+        console.log('📚 HISTORICAL DATABASE (PERMANENT):');
+        console.log('   📊 Total Trades Ever: ' + this.tradeHistory.length);
+        console.log('   🏆 All-Time Win Rate: ' + allTimeWinRate + '% (' + allTimeWins + 'W / ' + allTimeLosses + 'L)');
+        console.log('   👥 Traders Tracked: ' + Object.keys(this.traderPatterns).length);
+        console.log('   🐋 Whales Identified: ' + Object.keys(this.marketIntelligence.whaleActivity).length);
+        console.log('   📈 Market Trades Analyzed: ' + this.marketIntelligence.totalMarketTrades.toLocaleString());
+        if (this.tradeHistory.length > 0) {
+            const firstTrade = new Date(this.tradeHistory[0].timestamp).toLocaleString();
+            const lastTrade = new Date(this.tradeHistory[this.tradeHistory.length - 1].timestamp).toLocaleString();
+            console.log('   📅 First Trade: ' + firstTrade);
+            console.log('   📅 Latest Trade: ' + lastTrade);
+        }
+        console.log('═══════════════════════════════════════════════════\n');
+    }
+}
+
+process.on('SIGINT', () => {
+    console.log('\n\n🛑 Shutting down AI...');
+    if (bot) {
+        bot.saveState();
+        bot.showStats();
+        console.log('✅ AI evolution saved! Resume anytime with: node paper-trading-ai.js\n');
+    }
+    process.exit(0);
+});
+
+const bot = new WorldClassTradingAI(19);
+bot.start().catch(error => {
+    console.error('Error:', error);
+    process.exit(1);
+});

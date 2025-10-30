@@ -1,0 +1,42 @@
+{
+  "name": "advanced-crypto-ai-trader",
+  "version": "2.0.0",
+  "description": "Advanced AI-powered cryptocurrency trading system with neural evolution and smart wallet management",
+  "main": "advanced-crypto-ai.js",
+  "scripts": {
+    "start": "node advanced-crypto-ai.js",
+    "test": "node test-ai.js",
+    "dashboard": "python3 -m http.server 8080",
+    "dev": "concurrently \"npm start\" \"npm run dashboard\"",
+    "github-deploy": "node deploy-to-github.js"
+  },
+  "keywords": [
+    "cryptocurrency",
+    "ai",
+    "trading",
+    "neural-network",
+    "machine-learning",
+    "blockchain",
+    "automated-trading",
+    "genetic-algorithm"
+  ],
+  "author": "ThaleLegendGamer",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fatmanbolt40/ai-trading-bot.git"
+  },
+  "homepage": "https://fatmanbolt40.github.io/ai-trading-bot/"
+}

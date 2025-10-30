@@ -1,0 +1,21 @@
+[Unit]
+Description=Crypto Trading AI Bot
+After=network.target
+
+[Service]
+Type=simple
+User=%USER%
+WorkingDirectory=/home/thalegegendgamer/crypto-ai
+ExecStart=/usr/bin/node /home/thalegegendgamer/crypto-ai/paper-trading-ai.js
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/thalegegendgamer/crypto-ai/ai-log.txt
+StandardError=append:/home/thalegegendgamer/crypto-ai/ai-log.txt
+
+# Environment variables (optional - can use .env file instead)
+# Environment="KRAKEN_API_KEY=your_key"
+# Environment="KRAKEN_API_SECRET=your_secret"
+# Environment="USE_REAL_MONEY=true"
+
+[Install]
+WantedBy=multi-user.target

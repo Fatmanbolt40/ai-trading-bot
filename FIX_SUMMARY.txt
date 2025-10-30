@@ -1,0 +1,41 @@
+=================================================================
+🔥 CRITICAL BUG FIX APPLIED - PROFIT CALCULATION CORRECTED
+=================================================================
+
+PROBLEM IDENTIFIED:
+------------------
+The AI was losing $0.02 per trade because it calculated profit
+WITHOUT accounting for sell fees, then sold and lost money.
+
+THE FIX:
+--------
+Modified line ~3365 in paper-trading-ai.js to calculate profit
+AFTER subtracting sell fees:
+
+BEFORE: profit = (currentValue - costBasis) / costBasis
+AFTER:  profit = ((currentValue - sellFee) - costBasis) / costBasis
+
+WHAT THIS MEANS:
+----------------
+✅ AI now only sells when it has REAL 0.5-1.0% profit (after ALL fees)
+✅ No more premature sells that lose money
+✅ No more $0.02 losses per trade
+✅ All profit targets (0.5%, 1.0%) are now ACCURATE
+
+EXPECTED RESULTS:
+-----------------
+- Every sell should be profitable (or break-even for coin swaps)
+- No more small losses
+- Profit targets will be respected
+- The AI will hold positions longer until they're truly profitable
+
+NEXT STEPS:
+-----------
+1. Restart the bot: node paper-trading-ai.js
+2. Monitor sells to verify they're profitable
+3. Check that no more 2 cent losses occur
+4. Confirm AI holds positions until 0.5%+ profit
+
+=================================================================
+STATUS: ✅ FIXED AND READY TO TEST
+=================================================================
