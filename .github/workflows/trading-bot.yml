@@ -1,8 +1,8 @@
-name: Crypto Trading Bot 24/7
+name: Crypto Trading Bot 24/7 PERSISTENT
 
 on:
   schedule:
-    # Run every 5 minutes
+    # Run every 5 minutes to keep process alive
     - cron: '*/5 * * * *'
   workflow_dispatch: # Allow manual trigger
   push:
@@ -16,6 +16,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    
+    - name: Download AI learning data from previous run
+      uses: actions/download-artifact@v4
+      continue-on-error: true
+      with:
+        name: ai-brain-persistent
+        path: .
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -32,15 +39,18 @@ jobs:
         USE_REAL_MONEY: true
         USE_FUTURES: true
       run: |
-        echo "🤖 Starting Crypto Trading Bot..."
+        echo "🤖 Starting Crypto Trading Bot (Persistent AI Brain)..."
+        echo "📊 Loading AI learning data from previous runs..."
         timeout 480 node paper-trading-ai.js || echo "✅ Bot cycle completed"
         
-    - name: Upload logs
+    - name: Upload AI brain (persistent learning)
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: trading-logs
+        name: ai-brain-persistent
         path: |
-          ai-log.txt
+          ai-historical-data.json
           paper-trading-state.json
-        retention-days: 7
+          ai-log.txt
+        retention-days: 90
+        overwrite: true

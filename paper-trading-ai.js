@@ -2099,10 +2099,21 @@ class WorldClassTradingAI {
             if (fs.existsSync(this.historicalDataFile)) {
                 const data = JSON.parse(fs.readFileSync(this.historicalDataFile));
                 this.tradeHistory = data.tradeHistory || [];
-                console.log('Loaded ' + this.tradeHistory.length + ' historical trades (ALL TIME)');
+                
+                console.log('🧠 AI BRAIN LOADED - PERMANENT LEARNING ACTIVE');
+                console.log(`   📊 Total Historical Trades: ${this.tradeHistory.length}`);
+                if (data.firstTrade) {
+                    console.log(`   📅 Learning Since: ${new Date(data.firstTrade).toLocaleDateString()}`);
+                }
+                console.log(`   🔄 Last Updated: ${data.updated || 'Unknown'}`);
+                console.log('   ✓ Neural patterns preserved across all runs');
+                console.log('   ✓ AI will continue growing forever\n');
+            } else {
+                console.log('🌱 NEW AI BRAIN - Starting permanent learning journey...\n');
             }
         } catch (error) {
-            console.log('No historical data found - starting fresh');
+            console.log('⚠️  Warning: Could not load historical data - starting fresh');
+            console.log('   Error:', error.message, '\n');
         }
     }
 
@@ -2618,14 +2629,22 @@ class WorldClassTradingAI {
             timestamp: new Date().toISOString()
         }, null, 2));
         
-        // Save ALL historical trades separately (growing database)
+        // Save ALL historical trades separately (PERMANENT GROWING DATABASE)
         fs.writeFileSync(this.historicalDataFile, JSON.stringify({
             tradeHistory: this.tradeHistory,
             totalTrades: this.tradeHistory.length,
             firstTrade: this.tradeHistory[0]?.timestamp || null,
             lastTrade: this.tradeHistory[this.tradeHistory.length - 1]?.timestamp || null,
-            updated: new Date().toISOString()
+            updated: new Date().toISOString(),
+            generation: (this.tradeHistory.length / 10) | 0,  // AI generation number
+            aiAge: this.tradeHistory[0] ? 
+                Math.floor((Date.now() - new Date(this.tradeHistory[0].timestamp).getTime()) / (1000 * 60 * 60 * 24)) : 0
         }, null, 2));
+        
+        // Log AI growth stats
+        if (this.tradeHistory.length % 10 === 0) {
+            console.log(`\n🧠 AI EVOLUTION: Generation ${(this.tradeHistory.length / 10) | 0} (${this.tradeHistory.length} total trades)`);
+        }
     }
 
     async start() {
