@@ -1807,24 +1807,24 @@ class WorldClassTradingAI {
         
         this.settings = {
             maxTradeSize: 1.0,          // 🎯 Use 100% capital (~$19 per trade) - ALL IN to meet Kraken minimums
-            minProfit: 0.005,            // 🎯 TARGET: 0.5% profit = 1-2 cents on $2-3 trades (REALISTIC!)
-            targetProfit: 0.010,         // 🚀 IDEAL: 1.0% profit = 2-3 cents (achievable goal)
-            maxLoss: 0.015,              // Reference only (not used - patient holding)
-            trailingStopLoss: 0.005,     // 📉 Trail: 0.5% from peak when in profit
-            trailingProfitLock: 0.002,   // 🔒 Lock profits: If we hit 0.5%+, sell if drops 0.2% from peak
-            emergencyExitThreshold: 0.50,  // 🚨 Emergency exit at -50% loss (prevent PNUT disasters!)
-            forcedLiquidationThreshold: 0.30,  // 🛑 Force sell at -30% after minimum hold
-            maxHoldTime: 1200,           // ⏱️ PATIENT: Up to 20 minutes per trade (find good exits)
-            minHoldTime: 60,             // ⏳ MINIMUM: Hold at least 1 minute (60 cycles @ 0.1s = patient)
-            quickExitTime: 30,           // Reference only
-            panicSellThreshold: 0.100,   // DISABLED: Never panic sell (set to 10% so it never triggers)
-            checkInterval: 100,          // ⚡ SPEED: Check every 0.1 seconds (10 checks/sec for fast reactions!)
-            evolutionFrequency: 3,       // 🧬 LEARN: Evolve every 3 trades (balanced learning)
+            minProfit: 0.010,            // 🎯 TARGET: 1.0% profit - FAST MEME COIN SCALPING!
+            targetProfit: 0.014,         // 🚀 IDEAL: 1.4% profit - MAXIMUM QUICK PROFIT TARGET!
+            maxLoss: 0.03,               // 🛑 STOP LOSS: -3% maximum loss per trade
+            trailingStopLoss: 0.03,      // 📉 Trail: -3% hard stop from peak when in profit
+            trailingProfitLock: 0.005,   // 🔒 Lock profits: If we hit 1%+, sell if drops 0.5% from peak
+            emergencyExitThreshold: 0.03,  // 🚨 Emergency exit at -3% loss (CUT LOSSES FAST!)
+            forcedLiquidationThreshold: 0.03,  // 🛑 Force sell at -3% IMMEDIATELY
+            maxHoldTime: 300,            // ⏱️ FAST: Max 5 minutes per trade (quick scalps!)
+            minHoldTime: 10,             // ⏳ MINIMUM: Hold at least 1 second (10 cycles @ 0.1s = super fast!)
+            quickExitTime: 20,           // Quick exit after 2 seconds if profitable
+            panicSellThreshold: 0.03,    // 🚨 PANIC SELL at -3% (enforce stop loss!)
+            checkInterval: 50,           // ⚡⚡ ULTRA SPEED: Check every 0.05 seconds (20 checks/sec!)
+            evolutionFrequency: 5,       // 🧬 LEARN: Evolve every 5 trades (faster learning)
             tradingFee: 0.0000,          // 💎 KRAKEN PLUS: ZERO FEES!          
-            scalpWindow: 10,             // Fast momentum (10 cycles = 1 second)
-            momentumBoost: 0.7,          // Higher momentum boost
-            maxPositions: 6,             // 🎰 MORE POSITIONS: 6 simultaneous scalps
-            minDataPoints: 3             // ⚡ QUICK START: Only 3 data points (0.3 seconds to start!)
+            scalpWindow: 5,              // Ultra-fast momentum (5 cycles = 0.25 seconds)
+            momentumBoost: 0.9,          // Maximum momentum boost for meme coins!
+            maxPositions: 8,             // 🎰 MORE POSITIONS: 8 simultaneous meme coin scalps!
+            minDataPoints: 2             // ⚡ INSTANT START: Only 2 data points (0.1 seconds to start!)
         };
         
         // BONK reference and swapping options
@@ -2081,12 +2081,12 @@ class WorldClassTradingAI {
                 };
                 console.log('💼 Wallets synced: Main $' + this.wallets.main.toFixed(2) + ' | Trading $' + this.wallets.trading.toFixed(2));
                 
-                // 💎 ENFORCE PROFIT TARGETS - 1.5% profit, 3% stop loss
-                this.settings.minProfit = 0.015;  // 1.5% minimum
-                this.settings.targetProfit = 0.015;  // 1.5% target
+                // 💎 ENFORCE PROFIT TARGETS - 1.0-1.4% profit, 3% stop loss
+                this.settings.minProfit = 0.010;  // 1.0% minimum
+                this.settings.targetProfit = 0.014;  // 1.4% target
                 this.settings.trailingStopLoss = 0.03;  // 3% stop loss
                 this.settings.stopLoss = 0.03;  // 3% hard stop loss
-                this.brain.sellThreshold = 0.015;  // 1.5% sell threshold
+                this.brain.sellThreshold = 0.010;  // 1.0% sell threshold
                 console.log('💎 PROFIT TARGETS: Target=' + (this.settings.targetProfit*100).toFixed(1) + '%, Stop Loss=' + (this.settings.stopLoss*100).toFixed(1) + '%');
             }
         } catch (error) {
