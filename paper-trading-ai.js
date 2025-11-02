@@ -3852,7 +3852,8 @@ class WorldClassTradingAI {
         
         
         // 🛑 3% STOP LOSS: Sell and find new market when down 3%
-        if (profit <= -0.03) {  // -3% loss
+        // Use small epsilon for floating point comparison
+        if (profit < (-0.03 + 0.0001)) {  // -3% loss (with epsilon)
             sellScore = 1.0;
             exitReason = `🛑 STOP LOSS -${Math.abs(profit*100).toFixed(1)}% (find new market)`;
             console.log(`\n🛑 STOP LOSS TRIGGERED FOR ${market}`);
@@ -3889,8 +3890,9 @@ class WorldClassTradingAI {
         }
         
         // 🎯 PROFIT-ONLY SELLING - No more premature exits!
-        // ONLY sell when we hit TARGET profit (3.0%+) - NO exceptions!
-        if (profit >= targetProfitWithFees) {
+        // ONLY sell when we hit TARGET profit (1.5%+) - NO exceptions!
+        // Use small epsilon for floating point comparison
+        if (profit > (targetProfitWithFees - 0.0001)) {  // 1.5% profit (with epsilon)
             sellScore = 1.0;  // PERFECT - hit target!
             exitReason = '🎯 TARGET PROFIT +' + (targetProfitWithFees*100).toFixed(1) + '% (covers ALL fees)';
         }

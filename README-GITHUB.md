@@ -82,9 +82,17 @@ node paper-trading-ai.js
 Edit profit targets in `paper-trading-ai.js`:
 
 ```javascript
-this.settings.minProfit = 0.014;  // 1.4% minimum profit
-this.settings.targetProfit = 0.014;  // 1.4% target
+this.settings.minProfit = 0.015;  // 1.5% minimum profit
+this.settings.targetProfit = 0.015;  // 1.5% target profit
+this.settings.stopLoss = 0.03;  // 3% stop loss
 ```
+
+**Trade Settings:**
+- **Trade Size:** $1.50 per position
+- **Profit Target:** 1.5% (sells automatically)
+- **Stop Loss:** -3% (cuts losses automatically)
+- **Markets:** 400+ cryptocurrencies monitored
+- **Exit Strategy:** Only exits at 1.5% profit OR -3% loss
 
 ## 🔐 Security
 
