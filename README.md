@@ -1,367 +1,226 @@
-# 🚀 MEME COIN HUNTER - CRYPTO AI TRADING SYSTEM
+# 🤖 Crypto Trading AI Bot
 
-## 🎯 **AGGRESSIVE MEME COIN TRADING BOT - KRAKEN EDITION**
+**Intelligent cryptocurrency trading bot with neural network-based decision making for Kraken exchange.**
 
-### 🔥 **ULTRA-FAST MEME HUNTING**
-- ⚡ **1-second rapid market switching** - Jump on hot memes instantly
-- 💰 **$5 forced trades** - Multi-position trading (up to 6 coins)
-- 🚀 **100+ MEME COINS tracked** - DOGE, SHIB, PEPE, BONK, WIF, POPCAT, BRETT, MEW, and 90+ more
-- 🎯 **2.5x-3.75x meme coin priority boost** - AI hunts memes first
-- 🔥 **AUTO-TRENDING DETECTION** - Spots hot coins with momentum (0.5%+ volatility)
-- 📉 **XRP/Payment coin penalty** - 50% score reduction for slow movers
-- 💎 **5-7% profit targets** - No break-even sells
-- 🔄 **Aggressive position switching** - Dumps for 2x better meme opportunities
-- 💎 **Kraken Plus: ZERO trading fees**
-- 🧬 **Ultra-fast evolution** - Learns every single trade
+## 🌟 Features
 
----
+- **Multi-Coin Trading**: Monitors 614+ cryptocurrency pairs (memecoins, DeFi, L1s, bluechips)
+- **Neural Network AI**: Learns from market patterns and adapts strategies
+- **Real-time WebSocket**: Live price feeds from Kraken
+- **Smart Position Management**: Portfolio-aware trading with duplicate prevention
+- **Profit-Focused**: Configurable profit targets (default 1.4%)
+- **Risk Management**: Stop losses, position sizing, and balance protection
+- **24/7 Operation**: Designed for continuous operation with auto-recovery
+- **Real Money Trading**: Direct integration with Kraken Spot & Futures APIs
 
-## 🎮 **QUICK START**
+## 📋 Prerequisites
 
-### 🚀 **START TRADING:**
+- **Node.js** v18+ 
+- **Kraken Account** with API keys
+- **Linux/Unix** environment (recommended)
+- **Active internet** connection
+
+## 🚀 Quick Start
+
+### 1. Clone Repository
+
 ```bash
-cd ~/crypto-ai
-node paper-trading-ai.js 2>&1 | tee ai-log.txt
+git clone https://github.com/yourusername/crypto-ai.git
+cd crypto-ai
 ```
 
-### 📊 **WATCH LIVE LOGS:**
+### 2. Install Dependencies
+
 ```bash
-tail -f ~/crypto-ai/ai-log.txt
+npm install
 ```
 
-### 🛑 **STOP TRADING:**
+### 3. Configure API Keys
+
+Create a `.env` file:
+
 ```bash
-pkill -f "node paper-trading-ai.js"
+# Kraken API Credentials
+KRAKEN_API_KEY=your_api_key_here
+KRAKEN_API_SECRET=your_api_secret_here
+
+# Trading Settings
+USE_REAL_MONEY=true
+USE_FUTURES=true
+INITIAL_BALANCE=10.00
 ```
 
-### 💸 **FORCE SELL XRP (Clear Portfolio):**
+**⚠️ Get API Keys:** See [HOW_TO_GET_API_KEYS.txt](./HOW_TO_GET_API_KEYS.txt)
+
+### 4. Sync Balance (First Time)
+
 ```bash
-cd ~/crypto-ai
-node sell-xrp-now.js
-```
-*Sells any synced positions from Kraken and frees up funds for meme trading*
-
----
-
-## 💰 **CURRENT CONFIGURATION**
-
-### ✅ **ACTIVE SETTINGS:**
-- 💵 **Trade Size:** $5 FORCED per trade (prevents all-in on 1 coin)
-- 🎯 **Profit Target:** 5-7% minimum
-- 🎰 **Markets:** 625+ coins tracked (100+ memes prioritized)
-- 👥 **Max Positions:** 6 simultaneous holdings
-- ⚡ **Switching:** 1 second cooldown, 10-15% better score triggers switch
-- 🚀 **Meme Priority:** 2.5x base score (3.75x if trending)
-- 🔥 **Trending Detection:** Volatility >0.5% + Uptrend >0.3% OR Volume spike >50%
-- 📉 **Slow Coin Penalty:** XRP/payment coins get 50% score reduction
-- 🧬 **Evolution Speed:** Every 1 trade (ultra-fast learning)
-- 🔄 **Sync Interval:** 5 minutes (avoids rate limits)
-
-### � **MEME COINS TRACKED:**
-**Dog Coins:** DOGE, SHIB, FLOKI, SAMO, AKITA, KISHU, HOGE, ELON, BABYDOGE
-**Cat Coins:** MEW, POPCAT, CATS, CATGIRL, GRUMPY, MEOW, PURR
-**Frog Coins:** PEPE, PEPE2, WOJAK, TURBO, BOBO
-**Solana Memes:** BONK, WIF, BOME, SLERF, MYRO, PONKE, WEN, SMOG, COQ
-**Base Memes:** BRETT, TOSHI, DEGEN, HIGHER, NORMIE, KEYCAT
-**And 60+ more!**
-
----
-
-## 🛠️ **MAINTENANCE COMMANDS**
-
-**Emergency Controls:**
-```bash
-./advanced-control.sh pause      # Stop new trades
-./advanced-control.sh sell       # Sell everything
-./advanced-control.sh sync       # Update balance
-./advanced-control.sh backup     # Save state
+node sync-true-balance.js
 ```
 
----
+This fetches your real Kraken balance and syncs the AI state.
 
-## 🚀 **QUICK START**
+### 5. Start Trading
 
-### 1️⃣ **Start Trading:**
 ```bash
-cd ~/crypto-ai
-./control-ai.sh start
+node paper-trading-ai.js
 ```
 
-### 2️⃣ **Watch It Work:**
-```bash
-./control-ai.sh watch
+## 📊 Key Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `paper-trading-ai.js` | Main trading bot (run this!) |
+| `sync-true-balance.js` | Sync AI with Kraken balance |
+| `create-exit-plan.js` | Generate exit strategy for positions |
+| `check-real-balance.js` | View current portfolio value |
+| `force-sell-all.js` | Emergency liquidation (use with caution) |
+| `dashboard-server.js` | Web dashboard (port 3000) |
+
+## 🎯 Configuration
+
+Edit profit targets in `paper-trading-ai.js`:
+
+```javascript
+this.settings.minProfit = 0.015;  // 1.5% minimum profit
+this.settings.targetProfit = 0.015;  // 1.5% target profit
+this.settings.stopLoss = 0.03;  // 3% stop loss
 ```
 
-### 3️⃣ **Check Logs:**
+**Trade Settings:**
+- **Trade Size:** $1.50 per position
+- **Profit Target:** 1.5% (sells automatically)
+- **Stop Loss:** -3% (cuts losses automatically)
+- **Markets:** 400+ cryptocurrencies monitored
+- **Exit Strategy:** Only exits at 1.5% profit OR -3% loss
+
+## 🔐 Security
+
+- **Never commit `.env`** - Contains API keys
+- **Enable API restrictions** on Kraken (trading only, no withdrawals)
+- **Use separate keys** for different bots
+- **Monitor regularly** via dashboard or logs
+
+## 🏃‍♂️ 24/7 Operation
+
+### Option A: PM2 (Recommended)
+
 ```bash
-./control-ai.sh logs
+npm install -g pm2
+pm2 start paper-trading-ai.js --name crypto-ai
+pm2 save
+pm2 startup
 ```
 
----
+### Option B: Screen Session
 
-## 🛡️ **SAFETY FEATURES**
-
-### 💰 **$6 Maximum Buy Size:**
-- AI will **NEVER** buy more than $6 per trade
-- Protects your capital from over-exposure
-- Still allows multiple positions across different coins
-
-### 🔄 **Intelligent Coin Switching:**
-- AI monitors 86 markets simultaneously
-- Automatically switches when it finds coins with **score > 0.8**
-- Only switches when current position is at break-even or better
-
-### 🔧 **UTILITIES:**
 ```bash
-# Check real Kraken balance
-node check-real-balance.js
+screen -S crypto-ai
+node paper-trading-ai.js
+# Press Ctrl+A then D to detach
+```
 
-# Sync state with Kraken
-node sync-balance-now.js
+### Option C: Systemd Service
 
-# Force sell all positions
-node quick-reset.js
+See `crypto-ai.service` for systemd configuration.
 
-# Monitor live
+## 📈 Monitoring
+
+### Dashboard
+```bash
+node dashboard-server.js
+# Open http://localhost:3000
+```
+
+### Logs
+```bash
 tail -f ai-log.txt
 ```
 
----
+### Balance Check
+```bash
+node check-real-balance.js
+```
 
-## ⚡ **HOW IT WORKS**
+## 🛑 Exit Plan
 
-### 🎯 **MEME COIN HUNTING STRATEGY:**
+Generate systematic exit strategy:
 
-1. **MASSIVE PRIORITY BOOST:**
-   - Base meme score: **2.5x** regular coins
-   - Trending memes: **3.75x** (2.5x × 1.5x trending bonus)
-   - Minimum meme score floor: 0.3 (never ignored)
-   - XRP/payment coins: **0.5x penalty** (slow movers deprioritized)
+```bash
+node create-exit-plan.js
+cat EXIT_PLAN.md
+```
 
-2. **AUTO-TRENDING DETECTION:**
-   - Volatility > 0.5% + Uptrend > 0.3%, OR
-   - Volatility > 0.8% alone, OR
-   - Volume spike > 50%
-   - Shows "🔥 TRENDING" logs when hot coins detected
-   - Trending coins get 2x score multiplier
+## 📚 Documentation
 
-3. **MULTI-POSITION TRADING:**
-   - $5 forced per trade (never all-in on one coin)
-   - Up to 6 simultaneous positions
-   - Won't buy same coin twice
-   - Diversifies across hot memes
+- [QUICK_START.md](./QUICK_START.md) - Detailed setup guide
+- [KRAKEN_SETUP_GUIDE.md](./KRAKEN_SETUP_GUIDE.md) - Kraken account setup
+- [AI_INTELLIGENCE_SYSTEM.md](./AI_INTELLIGENCE_SYSTEM.md) - How the AI works
+- [OVERNIGHT_GUIDE.md](./OVERNIGHT_GUIDE.md) - 24/7 operation tips
 
-4. **RAPID SWITCHING:**
-   - 1-second cooldown between switches
-   - Only needs **10-15%** better score (was 30%)
-   - **Dumps positions** for 2x better meme opportunities
-   - Can switch even when holding
+## ⚙️ System Requirements
 
-5. **SMART FILTERING:**
-   - Only trades $5 minimum coins (mostly memes)
-   - Filters out expensive coins (BTC, ETH, ZEC, AAVE)
-   - Excludes already-held markets
-   - Focuses on volatile, fast-moving coins
+- **RAM**: 512MB minimum (1GB recommended)
+- **CPU**: 1 core minimum
+- **Disk**: 100MB free space
+- **Network**: Stable connection (WebSocket intensive)
 
-6. **PROFIT PROTECTION:**
-   - 5% minimum profit target
-   - 7% ideal profit target
-   - Never sells at break-even
-   - Trailing stop loss protection
+## 🐛 Troubleshooting
 
-7. **ULTRA-FAST LEARNING:**
-   - Evolves after EVERY trade (was every 3 trades)
-   - Learns from Kraken trade history (50+ trades analyzed)
-   - Boosts priority for historically profitable coins
+### Connection Issues
+```bash
+# Check Kraken status
+node check-kraken-status.js
+```
 
----
+### Balance Mismatch
+```bash
+# Re-sync with Kraken
+node sync-true-balance.js
+```
 
-## 📊 **PERFORMANCE TRACKING**
+### Reset Everything
+```bash
+# WARNING: Clears state (positions persist on Kraken)
+node quick-reset.js
+```
 
-### 💰 **AI LEARNS FROM HISTORY:**
-- Fetches your Kraken trade history on startup
-- Analyzes win rate and profitable coins
-- Boosts priority for historically successful coins
-- Tracks 50+ recent trades
-- Win rate and profit analysis shown in logs
+## 🤝 Contributing
 
-### 📈 **REAL-TIME STATS:**
-The AI shows you:
-- Current balance and positions
-- Profit/loss per position
-- Market volatility and trends
-- 🔥 TRENDING coin alerts with volatility %
-- Top opportunities by score
-- Meme coin indicators (🚀)
-- Multi-position tracking (up to 6 holdings)
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-### 🔥 **TRENDING DETECTION:**
-Watch for these logs:
-- `🔥 TRENDING: DOGE/USD - Vol: 0.82%, Trend: 0.45%, Sector: meme`
-- `📈 TRENDING: SOL/USD - Vol: 0.91%, Trend: 0.33%, Sector: l1`
-- Shows when coins have strong momentum for priority boost
+## ⚠️ Disclaimer
 
----
+**This bot trades with REAL MONEY. Use at your own risk.**
 
-## �️ **SAFETY FEATURES**
+- Cryptocurrency trading is highly risky
+- Past performance does not guarantee future results
+- Only trade with money you can afford to lose
+- Always test with small amounts first
+- Monitor the bot regularly
+- No warranty or guarantee provided
 
-### ✅ **BUILT-IN PROTECTIONS:**
-- ✅ Only records trades when Kraken confirms (no phantom trades)
-- ✅ 5-minute sync interval (avoids rate limits)
-- ✅ Try/catch error handling on all API calls
-- ✅ Dust position filtering (<$1 ignored)
-- ✅ Minimum order size compliance
-- ✅ Trailing stop loss per position
-- ✅ $5 forced trade size (prevents over-exposure)
-- ✅ Multi-position filter (won't buy duplicates)
-- ✅ Trending detection with debug logs
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+## 🙏 Acknowledgments
+
+- Kraken Exchange for robust API
+- Node.js community for excellent libraries
+- All contributors and testers
+
+## 📞 Support
+
+- **Issues**: GitHub Issues
+- **Documentation**: See docs folder
 
 ---
 
-## 🚀 **TROUBLESHOOTING**
+**Made with ❤️ by crypto enthusiasts**
 
-### ❌ **Rate Limit Errors:**
-If you see "EAPI:Rate limit exceeded":
-- Wait 2-5 minutes
-- AI auto-retries with exponential backoff
-- Sync interval is 5 minutes to prevent this
-
-### ❌ **Order Minimum Errors:**
-If "volume minimum not met":
-- Coin requires $10 minimum (BTC, ETH, ZEC)
-- AI now filters these out automatically
-- Only trades $5 minimum coins
-
-### ❌ **Connection Issues:**
-If WebSocket disconnects:
-- AI auto-reconnects every 5 seconds
-- Market data resumes automatically
-- No action needed
-
-### 🔥 **Not Seeing Trending Alerts?**
-Trending detection requires:
-- 30+ price data points per coin (takes ~30-60 seconds after startup)
-- Volatility >0.5% OR Volume spike >50%
-- Will show "🔥 TRENDING" logs when detected
-- Lower volatility markets may not trigger trending status
-
----
-
-## 🧠 **AI INTELLIGENCE FEATURES:**
-
-### **Neural Decision Making:**
-- **Buy Low Detection:** AI spots price dips and low opportunities
-- **Sell High Optimization:** AI waits for profitable exits
-- **Risk Management:** Stop losses and position sizing
-- **Market Timing:** Trend analysis and momentum detection
-- **Learning Memory:** AI remembers past successes and failures
-
-### **Evolution Process:**
-- **Generation 1:** Random AI strategies (learning phase)
-- **Generation 10:** AI starts showing patterns
-- **Generation 50:** AI develops sophisticated strategies
-- **Generation 100+:** Expert-level trading intelligence
-
----
-
-## 📊 **DASHBOARD FEATURES:**
-
-### **Real-Time Monitoring:**
-- 💰 **Live Wallet Balances** - See your exact wallet structure
-- 🤖 **AI Trader Performance** - Individual trader stats and fitness
-- 📈 **Portfolio Growth Chart** - Visual profit tracking
-- 🧬 **Evolution Progress** - Generation and learning metrics
-- 📋 **Live Trading Logs** - Real-time AI decisions and reasoning
-
-### **Elite Trader Identification:**
-- ⭐ **Star indicators** for best performing AIs
-- 👑 **Crown symbols** for elite traders
-- 📊 **Fitness scores** showing AI intelligence levels
-- 🎯 **Win rates** and profit tracking per trader
-
-### **Advanced Controls:**
-- 🛑 **Emergency Stop** - Immediately halts all AI trading
-- ⏸️ **Pause Trading** - Temporarily stops trades (resumes later)
-- 📊 **Optimize Traders** - Forces immediate evolution to improve AI performance
-- 🔄 **Reset Traders** - Restarts AI with fresh strategies
-- ⚡ **Risk Management** - Adjust position sizes and stop losses
-- 📱 **Mobile-Responsive** - Touch gestures and swipe navigation
-
-### **What "Optimize AI" Does:**
-When you click **"Optimize Traders"**:
-1. 🧬 **Forces immediate evolution** (no waiting for 50 cycles)
-2. 🏆 **Breeds best performers** - Combines top trader DNA
-3. 🔄 **Replaces weak traders** - Eliminates poor strategies
-4. ⚡ **Accelerates learning** - Jumps ahead in evolution
-5. 📈 **Improves performance** - Creates smarter AI generation
-
-**Best Time to Use:** After 20+ generations when AI has enough data, or when traders are stuck in losing patterns.
-
----
-
-## 🎯 **REAL TRADING PREPARATION:**
-
-### **Current State:** TRAINING MODE
-- ✅ Real market data integration
-- ✅ Advanced AI strategies  
-- ✅ Perfect wallet management
-- ✅ Profit optimization systems
-
-### **Ready for Live Trading:**
-When your AI reaches high generations (50+), you can:
-1. **Connect to real exchange APIs** (Binance, Coinbase, etc.)
-2. **Start with small amounts** ($10-50 for safety)
-3. **Let AI trade automatically** with your proven strategies
-4. **Scale up gradually** as confidence grows
-
----
-
-## 🔥 **WHY THIS IS THE ULTIMATE SYSTEM:**
-
-### 🧠 **Smarter Than Humans:**
-- AI never gets emotional or makes panic decisions
-- Learns from thousands of scenarios in hours
-- Optimizes for "buy low, sell high" automatically
-- Evolves strategies humans never think of
-
-### 💰 **Bulletproof Wallet System:**
-- 60% always safe in main wallet
-- Can never lose your core funds
-- Automatic rebalancing ensures growth
-- Risk-managed trading with house money
-
-### ⚡ **Lightning Fast Learning:**
-- 1800 learning cycles per hour
-- Evolution every 100 seconds
-- Real market data integration
-- Genetic algorithm optimization
-
-### 📊 **Professional Grade:**
-- Real-time monitoring dashboard
-- Live performance analytics
-- Trading decision transparency  
-- Ready for real money deployment
-
----
-
-## 🎊 **CONGRATULATIONS!**
-
-### **You Now Have:**
-1. ✅ **The most advanced crypto AI trading system possible**
-2. ✅ **Your exact wallet structure implemented perfectly**  
-3. ✅ **AI that learns "buy low, sell high" automatically**
-4. ✅ **Real market data and live trading preparation**
-5. ✅ **Professional dashboard and monitoring tools**
-
-### **Next Steps:**
-1. 🚀 **Start the AI and watch it learn**
-2. 📊 **Monitor the dashboard for 24-48 hours**
-3. 🧬 **Watch it evolve through generations**
-4. 💰 **When satisfied, connect to real trading**
-
-### **Long-term Goal Achieved:**
-✅ Your AI is now training to become a crypto trading expert that will make real trades on real markets with maximum intelligence and safety!
-
----
-
-**🎯 Your advanced crypto AI empire starts now! Fire it up and watch the magic happen! 🚀💰**
+*Happy Trading! 🚀*
