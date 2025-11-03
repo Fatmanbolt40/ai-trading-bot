@@ -3937,20 +3937,36 @@ class WorldClassTradingAI {
             console.log(`   Drop from peak: ${(dropFromPeak*100).toFixed(2)}% | Threshold: 1.0%`);
         }
         
-        // ⏳ PATIENCE LOGIC: HOLD UNDERWATER POSITIONS - Never panic sell!
-        // BUT respect emergency exits and forced liquidations set above
-        if (profit < 0 && sellScore < 0.9) {  // Don't override emergency/forced exits
+        // ⏳ SMART LOSS MANAGEMENT - Cut losses fast, let winners run!
+        // ONLY hold underwater if loss is TINY (<1%) - otherwise SELL!
+        if (profit < 0 && sellScore < 0.9) {  // Don't override emergency/forced exits that already set sellScore=1.0
             const holdCycles = this.state.cycle - position.buyCycle;
-            // ❌ DISABLED PANIC SELLING - Only allow forced sells
+            
+            // 🔴 FORCE SELL: User requested
             if (this.forceSellNow) {
                 sellScore = 1.0;
                 exitReason = '🔴 FORCED SELL (user requested)';
                 this.forceSellNow = false;
-            } else {
-                // 💎 HOLD AND WAIT FOR PROFIT - Don't sell at losses!
-                sellScore = 0; // Prevent selling
+            }
+            // 🛑 STOP LOSS ENFORCEMENT: -3% or worse = IMMEDIATE SELL
+            else if (profit <= -0.03) {
+                sellScore = 1.0;
+                exitReason = `� STOP LOSS -${Math.abs(profit*100).toFixed(2)}% - CUT LOSSES & FIND BETTER COIN!`;
+                console.log(`🛑 ENFORCING STOP LOSS FOR ${market}: ${(profit*100).toFixed(2)}%`);
+            }
+            // 💎 HOLD TINY LOSSES: Only hold if loss is between 0% and -1% (very close to break-even)
+            else if (profit > -0.01) {  // Loss is less than 1%
+                sellScore = 0; // Hold for small recovery
                 if (holdCycles % 50 === 0) {
-                    console.log(`💎 HOLDING ${market} underwater: ${(profit*100).toFixed(2)}% - waiting for profit...`);
+                    console.log(`💎 HOLDING ${market} (tiny loss): ${(profit*100).toFixed(2)}% - can recover easily`);
+                }
+            }
+            // 🔄 SWAP AT LOSS: Between -1% and -3%, allow swapping for better opportunities
+            else {
+                // Loss is between -1% and -3% - don't force hold, allow market scanner to find better
+                sellScore = 0.3;  // Low score = can be replaced by better opportunity
+                if (holdCycles % 50 === 0) {
+                    console.log(`🔄 ${market} at ${(profit*100).toFixed(2)}% - can swap for better coin`);
                 }
             }
         }
@@ -4111,16 +4127,22 @@ class WorldClassTradingAI {
                 console.log('   💹 P/L: ' + (profit > 0 ? '+' : '') + profitPercent.toFixed(2) + '% ($' + (profit > 0 ? '+' : '') + (currentValue - costBasis).toFixed(4) + ')');
                 
                 if (profit < 0) {
-                    console.log('   🎯 TARGET: +3.0% profit (0.48% net after fees)');
-                    console.log('   🚀 IDEAL: +4.0% profit (1% net profit!)');
-                    console.log('   💎 PATIENT HOLD - Will only sell when profitable!');
+                    const absLoss = Math.abs(profit * 100);
+                    if (absLoss >= 3.0) {
+                        console.log('   🛑 STOP LOSS: -' + absLoss.toFixed(2) + '% - WILL EXIT & FIND BETTER COIN!');
+                    } else if (absLoss >= 1.0) {
+                        console.log('   ⚠️ LOSS: -' + absLoss.toFixed(2) + '% - Can swap for better opportunity');
+                    } else {
+                        console.log('   💎 TINY LOSS: -' + absLoss.toFixed(2) + '% - Can recover easily');
+                    }
+                    console.log('   🎯 TARGET: +' + (this.settings.minProfit * 100).toFixed(1) + '% to +' + (this.settings.targetProfit * 100).toFixed(1) + '% profit');
                 } else if (profit < this.settings.minProfit) {
-                    console.log('   🎯 TARGET: +3.0% profit (currently +' + (profit * 100).toFixed(2) + '%, getting closer!)');
-                    console.log('   � IDEAL: +4.0% for maximum profit');
+                    console.log('   🎯 TARGET: +' + (this.settings.targetProfit * 100).toFixed(1) + '% profit (currently +' + (profit * 100).toFixed(2) + '%, getting closer!)');
+                    console.log('   🚀 IDEAL: +' + (this.settings.targetProfit * 100).toFixed(1) + '% for maximum profit');
                 } else if (profit < this.settings.targetProfit) {
-                    console.log('   ✅ GOOD PROFIT! Will sell at +3.0% OR wait for +4.0% target');
+                    console.log('   ✅ GOOD PROFIT! Will sell at +' + (this.settings.targetProfit * 100).toFixed(1) + '% target');
                 } else {
-                    console.log('   🎯🔥 TARGET HIT +1.5%! Selling next cycle!');
+                    console.log('   🎯🔥 TARGET HIT +' + (this.settings.targetProfit * 100).toFixed(1) + '%! Selling next cycle!');
                 }
                 
                 console.log('   📈 Peak: $' + position.peak.toFixed(2) + ' | Trail Stop: $' + trailingStop.toFixed(2));
