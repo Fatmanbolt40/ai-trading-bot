@@ -1814,14 +1814,14 @@ class WorldClassTradingAI {
             trailingProfitLock: 0.005,   // 🔒 Lock profits: If we hit 1%+, sell if drops 0.5% from peak
             emergencyExitThreshold: 0.03,  // 🚨 Emergency exit at -3% loss (CUT LOSSES FAST!)
             forcedLiquidationThreshold: 0.03,  // 🛑 Force sell at -3% IMMEDIATELY
-            maxHoldTime: 300,            // ⏱️ FAST: Max 5 minutes per trade (quick scalps!)
-            minHoldTime: 10,             // ⏳ MINIMUM: Hold at least 1 second (10 cycles @ 0.1s = super fast!)
-            quickExitTime: 20,           // Quick exit after 2 seconds if profitable
+            maxHoldTime: 150,            // ⏱️ FAST: Max 30 seconds per trade (150 cycles @ 0.2s)
+            minHoldTime: 5,              // ⏳ MINIMUM: Hold at least 1 second (5 cycles @ 0.2s)
+            quickExitTime: 10,           // Quick exit after 2 seconds if profitable (10 cycles)
             panicSellThreshold: 0.03,    // 🚨 PANIC SELL at -3% (enforce stop loss!)
-            checkInterval: 50,           // ⚡⚡ ULTRA SPEED: Check every 0.05 seconds (20 checks/sec!)
+            checkInterval: 200,          // ⚡ FAST: Check every 0.2 seconds (5 checks/sec - Kraken-friendly!)
             evolutionFrequency: 5,       // 🧬 LEARN: Evolve every 5 trades (faster learning)
             tradingFee: 0.0000,          // 💎 KRAKEN PLUS: ZERO FEES!          
-            scalpWindow: 5,              // Ultra-fast momentum (5 cycles = 0.25 seconds)
+            scalpWindow: 10,             // Fast momentum (10 cycles = 2 seconds @ 0.2s intervals)
             momentumBoost: 0.9,          // Maximum momentum boost for meme coins!
             maxPositions: 8,             // 🎰 MORE POSITIONS: 8 simultaneous meme coin scalps!
             minDataPoints: 2             // ⚡ INSTANT START: Only 2 data points (0.1 seconds to start!)
