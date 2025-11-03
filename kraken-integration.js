@@ -19,6 +19,12 @@ class KrakenWebSocket {
         this.orderBook = { bids: [], asks: [] };
         this.lastPrice = 0;
         this.lastTrade = null;
+        
+        // 🚨 RATE LIMIT PROTECTION: Exponential backoff for reconnections
+        this.reconnectDelay = 5000;  // Start at 5 seconds
+        this.maxReconnectDelay = 120000;  // Max 2 minutes
+        this.reconnectAttempts = 0;
+        this.rateLimitedUntil = null;
     }
 
     /**
@@ -42,13 +48,35 @@ class KrakenWebSocket {
             });
             
             this.wsPublic.on('error', (error) => {
-                console.error('❌ Public WebSocket error:', error);
+                // Check if it's a rate limit error (429)
+                if (error.message && error.message.includes('429')) {
+                    console.error('⚠️ WebSocket error: Unexpected server response: 429');
+                    console.log('🛑 RATE LIMITED BY KRAKEN - Backing off...');
+                    this.reconnectAttempts++;
+                    this.rateLimitedUntil = Date.now() + (this.reconnectDelay * Math.pow(2, Math.min(this.reconnectAttempts, 5)));
+                    console.log(`⏳ Will retry in ${(this.rateLimitedUntil - Date.now()) / 1000}s (attempt ${this.reconnectAttempts})`);
+                } else {
+                    console.error('❌ Public WebSocket error:', error.message || error);
+                }
                 reject(error);
             });
             
             this.wsPublic.on('close', () => {
-                console.log('🔌 Public WebSocket disconnected');
-                setTimeout(() => this.connectPublic(), 5000); // Auto-reconnect
+                console.log('🔌 Connection closed. Reconnecting...');
+                
+                // Calculate backoff delay
+                let delay = this.reconnectDelay;
+                if (this.rateLimitedUntil && Date.now() < this.rateLimitedUntil) {
+                    delay = this.rateLimitedUntil - Date.now();
+                } else if (this.reconnectAttempts > 0) {
+                    delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts), this.maxReconnectDelay);
+                }
+                
+                console.log(`⏳ Reconnecting in ${(delay / 1000).toFixed(1)}s...`);
+                setTimeout(() => {
+                    this.reconnectAttempts = Math.max(0, this.reconnectAttempts - 1); // Slowly reduce attempts
+                    this.connectPublic();
+                }, delay);
             });
         });
     }
