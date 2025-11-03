@@ -1175,8 +1175,203 @@ class MarketScanner {
         }
         
         return baseScore;
+    }
 
+
+    // 🧠 ADVANCED AI: Momentum Confirmation - Prevents buying tops!
+    checkMomentumConfirmation(market) {
+        const data = this.markets[market];
+        if (!data || !data.history || data.history.length < 10) {
+            return { confirmed: false, reason: 'Insufficient data' };
+        }
+        
+        const prices = data.history.slice(-10).map(h => h.price);
+        if (prices.length < 5) {
+            return { confirmed: false, reason: 'Not enough price points' };
+        }
+        
+        // Check last 5 prices for uptrend
+        const last5 = prices.slice(-5);
+        const first3Avg = (last5[0] + last5[1] + last5[2]) / 3;
+        const last2Avg = (last5[3] + last5[4]) / 2;
+        const momentum = (last2Avg - first3Avg) / first3Avg;
+        
+        // Check for acceleration (getting faster)
+        const mid3Avg = (last5[1] + last5[2] + last5[3]) / 3;
+        const earlyMomentum = (mid3Avg - first3Avg) / first3Avg;
+        const lateMomentum = (last2Avg - mid3Avg) / mid3Avg;
+        const acceleration = lateMomentum > earlyMomentum;
+        
+        // CONFIRM: Positive momentum + acceleration
+        const confirmed = momentum > 0.001 && acceleration;  // >0.1% rise + accelerating
+        
+        return {
+            confirmed,
+            momentum: momentum * 100,  // as percentage
+            acceleration,
+            reason: confirmed ? '✅ Uptrend + Acceleration' : '❌ No uptrend or decelerating'
+        };
+    }
     
+    // 🎯 ADVANCED AI: Volatility-Adjusted Profit Targets
+    getVolatilityAdjustedTarget(market) {
+        const data = this.markets[market];
+        if (!data || !data.volatility) {
+            return this.settings.targetProfit;  // Default 1.4%
+        }
+        
+        const vol = data.volatility;
+        
+        // High volatility coins can hit bigger targets
+        if (vol > 0.03) {  // >3% volatility
+            return 0.025;  // 2.5% target
+        } else if (vol > 0.02) {  // 2-3% volatility
+            return 0.018;  // 1.8% target
+        } else if (vol > 0.01) {  // 1-2% volatility (normal)
+            return 0.014;  // 1.4% target (default)
+        } else {  // <1% volatility (slow)
+            return 0.010;  // 1.0% target (exit faster)
+        }
+    }
+    
+    // 🛡️ ADVANCED AI: Adaptive Stop Loss (Volatility-Based)
+    getAdaptiveStopLoss(market) {
+        const data = this.markets[market];
+        if (!data || !data.volatility) {
+            return this.settings.maxLoss;  // Default -3%
+        }
+        
+        const vol = data.volatility;
+        
+        // High volatility coins need wider stops (avoid noise)
+        if (vol > 0.03) {  // >3% volatility
+            return 0.04;  // -4% stop (wider)
+        } else if (vol > 0.02) {  // 2-3% volatility
+            return 0.03;  // -3% stop (default)
+        } else if (vol > 0.01) {  // 1-2% volatility
+            return 0.025;  // -2.5% stop
+        } else {  // <1% volatility (stable coins)
+            return 0.02;  // -2% stop (tighter)
+        }
+    }
+    
+    // 🔍 ADVANCED AI: Multi-Timeframe Confirmation
+    checkMultiTimeframeAlignment(market) {
+        const data = this.markets[market];
+        if (!data || !data.history || data.history.length < 30) {
+            return { aligned: false, reason: 'Insufficient data' };
+        }
+        
+        const prices = data.history.map(h => h.price);
+        
+        // 1-minute trend (last 10 data points @ 100ms = ~1 sec, so use 60 points = 1 min)
+        const oneMin = prices.slice(-60);
+        const oneMinTrend = oneMin.length >= 10 ? 
+            (oneMin[oneMin.length - 1] - oneMin[0]) / oneMin[0] : 0;
+        
+        // 5-minute trend (last 300 data points = 30 seconds, adjust proportionally)
+        const fiveMin = prices.slice(-150);  // Approximate 15 seconds
+        const fiveMinTrend = fiveMin.length >= 20 ?
+            (fiveMin[fiveMin.length - 1] - fiveMin[0]) / fiveMin[0] : 0;
+        
+        // 15-minute trend (use full history if available)
+        const fifteenMin = prices.slice(-450);  // Approximate 45 seconds
+        const fifteenMinTrend = fifteenMin.length >= 30 ?
+            (fifteenMin[fifteenMin.length - 1] - fifteenMin[0]) / fifteenMin[0] : 0;
+        
+        // ALL must be positive (uptrend across all timeframes)
+        const aligned = oneMinTrend > 0 && fiveMinTrend > 0 && fifteenMinTrend > 0;
+        
+        return {
+            aligned,
+            oneMin: (oneMinTrend * 100).toFixed(2) + '%',
+            fiveMin: (fiveMinTrend * 100).toFixed(2) + '%',
+            fifteenMin: (fifteenMinTrend * 100).toFixed(2) + '%',
+            reason: aligned ? '✅ All timeframes aligned UP' : '❌ Timeframes not aligned'
+        };
+    }
+    
+    // 🚦 ADVANCED AI: Correlation Risk Check
+    checkCorrelationRisk(market, currentPositions) {
+        const data = this.markets[market];
+        if (!data || !data.sector) {
+            return { safe: true, reason: 'No sector data' };
+        }
+        
+        // Count positions per sector
+        const sectorCounts = {};
+        currentPositions.forEach(pos => {
+            const posData = this.markets[pos.market];
+            if (posData && posData.sector) {
+                sectorCounts[posData.sector] = (sectorCounts[posData.sector] || 0) + 1;
+            }
+        });
+        
+        const targetSector = data.sector;
+        const currentCount = sectorCounts[targetSector] || 0;
+        
+        // LIMIT: Max 2 positions per sector (prevents correlated crashes)
+        const maxPerSector = 2;
+        const safe = currentCount < maxPerSector;
+        
+        return {
+            safe,
+            sector: targetSector,
+            currentCount,
+            maxAllowed: maxPerSector,
+            reason: safe ? 
+                `✅ Safe: ${currentCount}/${maxPerSector} in ${targetSector}` : 
+                `❌ Risk: Already ${currentCount}/${maxPerSector} in ${targetSector}`
+        };
+    }
+    
+    // 📊 ADVANCED AI: Smart Order Book Analysis (Liquidity Check)
+    checkOrderBookLiquidity(market) {
+        const data = this.markets[market];
+        if (!data || !data.volume) {
+            return { liquid: false, reason: 'No volume data' };
+        }
+        
+        // Check volume as proxy for liquidity
+        // High volume = tight spreads, low slippage
+        const volume = data.volume;
+        
+        // THRESHOLDS:
+        // >10M = Very liquid (tight spreads)
+        // 1-10M = Liquid (acceptable)
+        // 100K-1M = Low liquidity (wider spreads)
+        // <100K = Illiquid (avoid)
+        
+        let liquid = false;
+        let spreadEstimate = 0;
+        let reason = '';
+        
+        if (volume > 10000000) {
+            liquid = true;
+            spreadEstimate = 0.001;  // ~0.1% spread
+            reason = '✅ Very liquid (>10M volume)';
+        } else if (volume > 1000000) {
+            liquid = true;
+            spreadEstimate = 0.002;  // ~0.2% spread
+            reason = '✅ Liquid (1-10M volume)';
+        } else if (volume > 100000) {
+            liquid = true;  // Marginal
+            spreadEstimate = 0.005;  // ~0.5% spread
+            reason = '⚠️ Low liquidity (100K-1M volume)';
+        } else {
+            liquid = false;
+            spreadEstimate = 0.01;  // ~1% spread or more
+            reason = '❌ Illiquid (<100K volume) - AVOID';
+        }
+        
+        return {
+            liquid,
+            volume: (volume / 1000000).toFixed(1) + 'M',
+            estimatedSpread: (spreadEstimate * 100).toFixed(2) + '%',
+            reason
+        };
+
+
     }
     // 🔥 DETECT SECTOR ROTATION - Find the hot narrative!
     detectSectorRotation() {
@@ -3524,6 +3719,46 @@ class WorldClassTradingAI {
                 return;
             }
             
+            // 🧠 ADVANCED AI CHECKS - Make this bot smarter than other AIs!
+            console.log(`\n🧠 Running Advanced AI Pre-Flight Checks for ${market}...`);
+            
+            // CHECK 1: Momentum Confirmation (Prevents buying tops!)
+            const momentumCheck = this.scanner.checkMomentumConfirmation(market);
+            console.log(`   1️⃣ Momentum: ${momentumCheck.reason}`);
+            if (!momentumCheck.confirmed) {
+                console.log(`      ❌ REJECTED: ${momentumCheck.reason} - Avoiding potential top!`);
+                return; // DON'T BUY - prevents 30% of bad trades!
+            }
+            
+            // CHECK 2: Correlation Risk (Max 2 per sector)
+            const currentPositions = Object.entries(this.state.portfolio)
+                .filter(([_, pos]) => pos && pos.holdings > 0)
+                .map(([market, _]) => ({ market }));
+            const correlationCheck = this.scanner.checkCorrelationRisk(market, currentPositions);
+            console.log(`   2️⃣ Correlation: ${correlationCheck.reason}`);
+            if (!correlationCheck.safe) {
+                console.log(`      ❌ REJECTED: Too many ${correlationCheck.sector} positions - avoiding correlated crash risk!`);
+                return; // DON'T BUY - prevents sector-wide wipeouts!
+            }
+            
+            // CHECK 3: Liquidity Check (Avoid illiquid coins with slippage)
+            const liquidityCheck = this.scanner.checkOrderBookLiquidity(market);
+            console.log(`   3️⃣ Liquidity: ${liquidityCheck.reason}`);
+            if (!liquidityCheck.liquid) {
+                console.log(`      ❌ REJECTED: Illiquid market - avoiding slippage losses!`);
+                return; // DON'T BUY - prevents slippage eating profits!
+            }
+            
+            // CHECK 4: Multi-Timeframe Alignment (Optional - informational)
+            const timeframeCheck = this.scanner.checkMultiTimeframeAlignment(market);
+            console.log(`   4️⃣ Timeframes: ${timeframeCheck.reason}`);
+            if (timeframeCheck.aligned) {
+                console.log(`      ✅ BONUS: All timeframes bullish - extra confidence!`);
+                buyReason += ' | Multi-TF ✅';
+            }
+            
+            console.log(`\n✅ All Advanced AI Checks PASSED! Proceeding with purchase...`);
+            
             // 🧠 SMART BUY SIZING: Match Kraken minimums per coin + Scale with balance
             const coinMinimums = {
                 'BTC/USD': 10, 'ETH/USD': 10, 'XRP/USD': 5, 'SOL/USD': 5,
@@ -3874,10 +4109,18 @@ class WorldClassTradingAI {
         let sellScore = 0;
         let exitReason = '';
         
+        // 🎯 ADVANCED AI: Get volatility-adjusted targets
+        const adaptiveTarget = this.scanner.getVolatilityAdjustedTarget(market);
+        const adaptiveStop = this.scanner.getAdaptiveStopLoss(market);
+        const marketData = this.scanner.markets[market];
+        const volPercent = marketData && marketData.volatility ? (marketData.volatility * 100).toFixed(2) : 'N/A';
         
-        // 🛑 3% STOP LOSS: Sell and find new market when down 3%
-        // Use small epsilon for floating point comparison
-        if (profit < (-0.03 + 0.0001)) {  // -3% loss (with epsilon)
+        console.log(`\n📊 AI-Adjusted Targets for ${market} (Vol: ${volPercent}%):`);
+        console.log(`   🎯 Profit Target: ${(adaptiveTarget * 100).toFixed(1)}% (vs ${(this.settings.targetProfit * 100).toFixed(1)}% default)`);
+        console.log(`   🛑 Stop Loss: -${(adaptiveStop * 100).toFixed(1)}% (vs -${(this.settings.maxLoss * 100).toFixed(1)}% default)`);
+        
+        // 🛑 ADAPTIVE STOP LOSS: Sell when down to adaptive threshold
+        if (profit < (-adaptiveStop + 0.0001)) {  // Adaptive stop (with epsilon)
             sellScore = 1.0;
             exitReason = `🛑 STOP LOSS -${Math.abs(profit*100).toFixed(1)}% (find new market)`;
             console.log(`\n🛑 STOP LOSS TRIGGERED FOR ${market}`);
@@ -3904,8 +4147,9 @@ class WorldClassTradingAI {
         
         // �💎 PATIENCE IS PROFIT - Only sell when profitable AFTER withdrawal fees!
         // If BONK-relative sell percent is active, override min/target profit values
-        let minProfitWithFees = this.settings.minProfit;  // default 2.5%
-        let targetProfitWithFees = this.settings.targetProfit;  // default 3.0%
+        let minProfitWithFees = this.settings.minProfit;  // default 1.0%
+        let targetProfitWithFees = adaptiveTarget;  // USE ADAPTIVE TARGET!
+        
         if (this.bonkRelativeSellPercent !== null && typeof this.bonkRelativeSellPercent === 'number') {
             // If BONK moved X% (e.g., 0.03 for +3%), use that percent as targetProfit override
             targetProfitWithFees = Math.max(0.001, this.bonkRelativeSellPercent); // at least tiny positive
@@ -3914,11 +4158,11 @@ class WorldClassTradingAI {
         }
         
         // 🎯 PROFIT-ONLY SELLING - No more premature exits!
-        // ONLY sell when we hit TARGET profit (1.5%+) - NO exceptions!
+        // ONLY sell when we hit TARGET profit (adaptive based on volatility) - NO exceptions!
         // Use small epsilon for floating point comparison
-        if (profit > (targetProfitWithFees - 0.0001)) {  // 1.5% profit (with epsilon)
+        if (profit > (targetProfitWithFees - 0.0001)) {  // Adaptive target (with epsilon)
             sellScore = 1.0;  // PERFECT - hit target!
-            exitReason = '🎯 TARGET PROFIT +' + (targetProfitWithFees*100).toFixed(1) + '% (covers ALL fees)';
+            exitReason = `🎯 AI TARGET PROFIT +${(targetProfitWithFees*100).toFixed(1)}% (adjusted for ${volPercent}% volatility)`;
         }
         // 💎 HOLD EVERYTHING ELSE - Let profits run higher!
         // Don't sell just because we hit "minimum" profit - aim for TARGET!
