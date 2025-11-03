@@ -4267,7 +4267,7 @@ class WorldClassTradingAI {
         console.log('   Generation: ' + this.state.generation + ' | Cycle: ' + this.state.cycle);
         console.log('   Balance: $' + currentBalance.toFixed(2));
         console.log('   Gross P/L: ' + (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toFixed(4) + ' (' + (roi >= 0 ? '+' : '') + roi.toFixed(2) + '%)');
-        if (this.state.totalFeesPaid !== undefined) {
+        if (this.state.totalFeesPaid != null) {
             console.log('   Fees Paid: $' + this.state.totalFeesPaid.toFixed(4) + ' (0.00% Kraken Plus)');
             console.log('   Net P/L: ' + (netProfit >= 0 ? '+$' : '-$') + Math.abs(netProfit).toFixed(4) + ' (' + (netROI >= 0 ? '+' : '') + netROI.toFixed(2) + '%)');
         }
