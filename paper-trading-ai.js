@@ -1214,10 +1214,10 @@ class MarketScanner {
     }
     
     // 🎯 ADVANCED AI: Volatility-Adjusted Profit Targets
-    getVolatilityAdjustedTarget(market) {
+    getVolatilityAdjustedTarget(market, settings) {
         const data = this.markets[market];
         if (!data || !data.volatility) {
-            return this.settings.targetProfit;  // Default 1.4%
+            return settings.targetProfit;  // Default 1.4%
         }
         
         const vol = data.volatility;
@@ -1235,10 +1235,10 @@ class MarketScanner {
     }
     
     // 🛡️ ADVANCED AI: Adaptive Stop Loss (Volatility-Based)
-    getAdaptiveStopLoss(market) {
+    getAdaptiveStopLoss(market, settings) {
         const data = this.markets[market];
         if (!data || !data.volatility) {
-            return this.settings.maxLoss;  // Default -3%
+            return settings.maxLoss;  // Default -3%
         }
         
         const vol = data.volatility;
@@ -1843,18 +1843,21 @@ class MarketScanner {
                             }
                             
                             // Calculate volatility and trend
-                            if (this.markets[pair].history.length >= 30) {
+                            if (this.markets[pair].history.length >= 10) {  // Reduced from 30 to 10 for faster calc
                                 const prices = this.markets[pair].history.map(h => h.price);
                                 const avg = prices.reduce((a, b) => a + b) / prices.length;
                                 
-                                // Volatility
+                                // Volatility (works with 10+ data points now)
                                 const variance = prices.reduce((sum, p) => sum + Math.pow(p - avg, 2), 0) / prices.length;
                                 this.markets[pair].volatility = Math.sqrt(variance) / avg;
                                 
-                                // Trend
-                                const oldAvg = prices.slice(0, 15).reduce((a, b) => a + b) / 15;
-                                const newAvg = prices.slice(-15).reduce((a, b) => a + b) / 15;
-                                this.markets[pair].trend = (newAvg - oldAvg) / oldAvg;
+                                // Trend (need at least 10 points)
+                                if (prices.length >= 10) {
+                                    const halfLen = Math.floor(prices.length / 2);
+                                    const oldAvg = prices.slice(0, halfLen).reduce((a, b) => a + b) / halfLen;
+                                    const newAvg = prices.slice(-halfLen).reduce((a, b) => a + b) / halfLen;
+                                    this.markets[pair].trend = (newAvg - oldAvg) / oldAvg;
+                                }
                                 
                                 // 🔥 TRENDING DETECTION - Mark coins with strong momentum
                                 // Trending = volatility (>0.5%) + uptrend (>0.3%) OR volume spike
@@ -4110,12 +4113,19 @@ class WorldClassTradingAI {
         let exitReason = '';
         
         // 🎯 ADVANCED AI: Get volatility-adjusted targets
-        const adaptiveTarget = this.scanner.getVolatilityAdjustedTarget(market);
-        const adaptiveStop = this.scanner.getAdaptiveStopLoss(market);
+        const adaptiveTarget = this.scanner.getVolatilityAdjustedTarget(market, this.settings);
+        const adaptiveStop = this.scanner.getAdaptiveStopLoss(market, this.settings);
         const marketData = this.scanner.markets[market];
-        const volPercent = marketData && marketData.volatility ? (marketData.volatility * 100).toFixed(2) : 'N/A';
         
-        console.log(`\n📊 AI-Adjusted Targets for ${market} (Vol: ${volPercent}%):`);
+        // Better volatility display (show status if still calculating)
+        let volDisplay = 'Calculating...';
+        if (marketData && marketData.volatility && marketData.volatility > 0) {
+            volDisplay = `${(marketData.volatility * 100).toFixed(2)}%`;
+        } else if (marketData && marketData.history && marketData.history.length > 0) {
+            volDisplay = `Gathering data (${marketData.history.length}/30)`;
+        }
+        
+        console.log(`\n📊 AI-Adjusted Targets for ${market} (Vol: ${volDisplay}):`);
         console.log(`   🎯 Profit Target: ${(adaptiveTarget * 100).toFixed(1)}% (vs ${(this.settings.targetProfit * 100).toFixed(1)}% default)`);
         console.log(`   🛑 Stop Loss: -${(adaptiveStop * 100).toFixed(1)}% (vs -${(this.settings.maxLoss * 100).toFixed(1)}% default)`);
         
