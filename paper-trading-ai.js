@@ -1112,36 +1112,45 @@ class MarketScanner {
         }
         
         // ⚡ VOLATILITY FIRST: Changed from 50% to 70% weight!
+        // ⚡ VOLATILITY FIRST: Changed from 50% to 70% weight!
         baseScore = (volScore * 0.7) + (trendScore * 0.2) + (volumeScore * 0.1) + trendingBonus;
-        baseScore *= volumeMultiplier;  // Apply volume multiplier
         
-        // 🚀🚀🚀 ULTRA-FAST MOVERS - MAXIMUM PRIORITY for quick P/L jumps!
-        // These are coins that ACTUALLY move fast and make money quick
+        // 🎯 MULTIPLICATIVE BOOST SYSTEM with 2.5x CAP to prevent over-concentration
+        let totalMultiplier = 1.0;
+        
+        // Volume multiplier (now additive to prevent stacking)
+        totalMultiplier += (volumeMultiplier - 1.0) * 0.5;  // Reduce volume impact
+        
+        // 🚀 ULTRA-FAST MOVERS - High priority for quick P/L jumps
         const isHighVolatility = data.volatility > 0.01;  // >1% moves
         const isHighVolume = data.volume > 1000000;       // >1M volume = liquid
         const isFastMover = isHighVolatility && isHighVolume && data.trending;
         
         if (isFastMover) {
-            // 🔥 5X MULTIPLIER for PROVEN fast movers!
-            baseScore *= 5.0;
+            totalMultiplier += 1.5;  // +1.5x boost for fast movers
             console.log(`\n⚡⚡⚡ FAST MOVER DETECTED: ${market} - Vol: ${(data.volatility*100).toFixed(2)}%, Volume: ${(data.volume/1000000).toFixed(1)}M`);
-            console.log(`   🎯 Score boosted 5X: ${(baseScore/5).toFixed(3)} → ${baseScore.toFixed(3)}`);
         }
-        // 🔥🔥 MEME COIN MANIA MODE - Massive priority for fast movers!
+        // 🔥 MEME COIN MANIA MODE - Priority for meme coins
         else if (data.sector === 'meme') {
-            baseScore *= 2.5;  // 150% score boost for meme coins (was 30%)
+            totalMultiplier += 0.8;  // +0.8x boost for meme coins
             // Extra boost if volatile + trending
             if (data.volatility > 0.01 && data.trending) {
-                baseScore *= 1.5;  // Additional 50% boost for hot memes (was 20%)
+                totalMultiplier += 0.5;  // Additional +0.5x boost for hot memes
             }
-            // Even if slow, meme coins get minimum score
-            if (baseScore < 0.3) baseScore = 0.3;  // Ensure memes are always considered
         }
+        
+        // 🎯 CAP total multiplier at 2.5x to prevent over-concentration
+        totalMultiplier = Math.min(totalMultiplier, 2.5);
+        baseScore *= totalMultiplier;
+        
+        // Ensure minimum score for meme coins
+        if (data.sector === 'meme' && baseScore < 0.3) baseScore = 0.3;
         
         // 🔍 DEBUG: Log score calculation for high-volume coins
         if (data.volume > 10000000 && Math.random() < 0.01) {  // Log 1% of the time
             console.log(`\n📊 SCORE DEBUG for ${market}:`);
             console.log(`   Volume: ${(data.volume/1000000).toFixed(1)}M → Multiplier: ${volumeMultiplier}x`);
+            console.log(`   Total Multiplier: ${totalMultiplier.toFixed(2)}x (capped at 2.5x)`);
             console.log(`   Base Score: ${baseScore.toFixed(3)}`);
         }
         
@@ -1158,17 +1167,17 @@ class MarketScanner {
         // 🔍 DEBUG: Always log MOG score calculation
         if (market === 'MOG/USD') {
             console.log(`\n🔍 MOG/USD SCORE DEBUG:`);
-            console.log(`   Volume: ${(data.volume/1000000).toFixed(1)}M → Multiplier: ${volumeMultiplier}x`);
+            console.log(`   Volume: ${(data.volume/1000000).toFixed(1)}M`);
             console.log(`   volScore: ${volScore.toFixed(3)}, trendScore: ${trendScore.toFixed(3)}, volumeScore: ${volumeScore.toFixed(3)}`);
             console.log(`   ⚡ VOLATILITY FIRST: (${volScore.toFixed(3)} * 0.7) + (${trendScore.toFixed(3)} * 0.2) + (${volumeScore.toFixed(3)} * 0.1) = ${((volScore * 0.7) + (trendScore * 0.2) + (volumeScore * 0.1)).toFixed(3)}`);
-            console.log(`   After volume multiplier (${volumeMultiplier}x): ${(((volScore * 0.7) + (trendScore * 0.2) + (volumeScore * 0.1)) * volumeMultiplier).toFixed(3)}`);
-            console.log(`   After meme boost (2.5x): ${baseScore.toFixed(3)}`);
+            console.log(`   Total Multiplier: ${totalMultiplier.toFixed(2)}x (capped at 2.5x)`);
             console.log(`   FINAL SCORE: ${baseScore.toFixed(3)}`);
         }
         
         return baseScore;
-    }
+
     
+    }
     // 🔥 DETECT SECTOR ROTATION - Find the hot narrative!
     detectSectorRotation() {
         const sectorPerformance = new Map();
@@ -1815,15 +1824,15 @@ class WorldClassTradingAI {
             emergencyExitThreshold: 0.03,  // 🚨 Emergency exit at -3% loss (CUT LOSSES FAST!)
             forcedLiquidationThreshold: 0.03,  // 🛑 Force sell at -3% IMMEDIATELY
             maxHoldTime: 1500,           // ⏱️ SMART: Max 5 minutes (1500 cycles @ 0.2s) - Give memes time to move!
-            minHoldTime: 15,             // ⏳ MINIMUM: Hold at least 3 seconds (15 cycles @ 0.2s) - Avoid panic!
+            minHoldTime: 50,             // ⏳ MINIMUM: Hold at least 3 seconds (15 cycles @ 0.2s) - Avoid panic!
             quickExitTime: 50,           // 🚀 Quick exit after 10 seconds if at +1%+ (50 cycles)
             panicSellThreshold: 0.03,    // 🚨 PANIC SELL at -3% (enforce stop loss!)
-            checkInterval: 200,          // ⚡ FAST: Check every 0.2 seconds (5 checks/sec - Kraken-friendly!)
+            checkInterval: 100,          // ⚡ FAST: Check every 0.2 seconds (5 checks/sec - Kraken-friendly!)
             evolutionFrequency: 5,       // 🧬 LEARN: Evolve every 5 trades (faster learning)
             tradingFee: 0.0000,          // 💎 KRAKEN PLUS: ZERO FEES!          
             scalpWindow: 15,             // Momentum window (15 cycles = 3 seconds @ 0.2s intervals)
             momentumBoost: 0.9,          // Maximum momentum boost for meme coins!
-            maxPositions: 6,             // � FOCUSED: 6 positions (better capital per trade = higher quality)
+            maxPositions: 3,             // � FOCUSED: 6 positions (better capital per trade = higher quality)
             minDataPoints: 3             // ⚡ QUICK START: 3 data points (0.6 seconds to start - more reliable)
         };
         
@@ -3849,10 +3858,6 @@ class WorldClassTradingAI {
         const dropFromPeak = ((peakValue - currentValue) / peakValue);
         const profitFromPeak = ((position.peak - position.buyPrice) / position.buyPrice);
         
-        // 💸 ACCOUNT FOR WITHDRAWAL FEE in profit calculations
-        const withdrawalFee = this.withdrawalFees[market] || this.withdrawalFees['default'];
-        const withdrawalFeeCost = withdrawalFee * this.state.currentPrice;
-        const withdrawalFeePercent = withdrawalFeeCost / costBasis;
         
         // SCALPING: Micro momentum detection
         const recentPrices = this.state.priceHistory.slice(-this.settings.scalpWindow);
