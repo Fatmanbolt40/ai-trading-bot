@@ -1370,9 +1370,226 @@ class MarketScanner {
             estimatedSpread: (spreadEstimate * 100).toFixed(2) + '%',
             reason
         };
-
-
     }
+
+    // 🧮 MATHEMATICAL OPPORTUNITY COST ANALYSIS
+    // Calculates expected value of holding current position vs. swapping to new opportunity
+    calculateOpportunityCost(currentMarket, currentPosition, newMarket) {
+        const current = this.markets[currentMarket];
+        const newOpp = this.markets[newMarket];
+        
+        if (!current || !newOpp || !currentPosition) {
+            return { shouldSwap: false, reason: 'Missing market data', evDifference: 0 };
+        }
+        
+        // === CALCULATE EXPECTED VALUE OF HOLDING CURRENT POSITION ===
+        const currentPrice = current.price;
+        const currentProfit = (currentPrice - currentPosition.buyPrice) / currentPosition.buyPrice;
+        const currentValue = currentPosition.holdings * currentPrice;
+        
+        // Time held (seconds)
+        const holdTime = (Date.now() - currentPosition.buyTime) / 1000;
+        
+        // Current momentum (30-period)
+        const currentHistory = current.history.slice(-30).map(h => h.price);
+        const currentMomentum = currentHistory.length > 1 
+            ? (currentHistory[currentHistory.length - 1] - currentHistory[0]) / currentHistory[0]
+            : 0;
+        
+        // Current volatility
+        const currentVol = current.volatility || 0;
+        
+        // Expected profit if we hold = current momentum * (volatility amplification) - decay factor
+        const timeDecayFactor = Math.max(0, 1 - (holdTime / 3600)); // Decays after 1 hour
+        const currentEV = currentMomentum * (1 + currentVol * 10) * timeDecayFactor;
+        
+        // === CALCULATE EXPECTED VALUE OF NEW OPPORTUNITY ===
+        const newHistory = newOpp.history.slice(-30).map(h => h.price);
+        const newMomentum = newHistory.length > 1
+            ? (newHistory[newHistory.length - 1] - newHistory[0]) / newHistory[0]
+            : 0;
+        
+        const newVol = newOpp.volatility || 0;
+        const newVolume = newOpp.volume || 0;
+        const currentVolume = current.volume || 0;
+        
+        // Volume surge = more participants = higher probability of continuation
+        const volumeRatio = currentVolume > 0 ? newVolume / currentVolume : 1;
+        const volumeBonus = Math.min(volumeRatio, 3) * 0.1; // Up to 30% bonus for 3x volume
+        
+        // Fresh opportunity bonus (no time decay)
+        const freshnessBonus = 0.2; // 20% bonus for fresh entry
+        
+        // New opportunity EV
+        const newEV = newMomentum * (1 + newVol * 10) * (1 + volumeBonus + freshnessBonus);
+        
+        // === SWAP COST (trading fees + slippage) ===
+        const swapCost = 0.001; // 0.1% fee + slippage
+        
+        // === DECISION LOGIC ===
+        const evDifference = newEV - currentEV - swapCost;
+        const minimumEdge = 0.005; // Need 0.5% edge to justify swap
+        
+        // Additional safety: Don't swap if current position is in profit and close to target
+        const targetProfit = 0.014; // 1.4% target
+        const closeToTarget = currentProfit > 0 && currentProfit >= targetProfit * 0.7; // Within 70% of target
+        
+        let shouldSwap = evDifference > minimumEdge && !closeToTarget;
+        let reason = '';
+        
+        if (closeToTarget) {
+            reason = `Near profit target (${(currentProfit*100).toFixed(2)}% / ${(targetProfit*100).toFixed(1)}% target) - holding`;
+            shouldSwap = false;
+        } else if (evDifference > minimumEdge) {
+            reason = `Strong edge: ${(evDifference*100).toFixed(2)}% EV improvement (${(newEV*100).toFixed(2)}% vs ${(currentEV*100).toFixed(2)}%)`;
+            shouldSwap = true;
+        } else if (evDifference > 0) {
+            reason = `Weak edge: ${(evDifference*100).toFixed(2)}% (below ${(minimumEdge*100).toFixed(1)}% threshold)`;
+            shouldSwap = false;
+        } else {
+            reason = `Current position superior by ${(Math.abs(evDifference)*100).toFixed(2)}%`;
+            shouldSwap = false;
+        }
+        
+        return {
+            shouldSwap,
+            reason,
+            evDifference,
+            currentEV,
+            newEV,
+            currentProfit,
+            currentMomentum,
+            newMomentum,
+            volumeRatio
+        };
+    }
+
+    // 🎯 ELITE SIGNAL DETECTION - Mathematically proven patterns
+    detectEliteSignals(market) {
+        const data = this.markets[market];
+        if (!data || data.history.length < 60) {
+            return { score: 0, signals: [], confidence: 0 };
+        }
+        
+        const prices = data.history.map(h => h.price);
+        const volumes = data.history.map(h => h.volume || 0);
+        
+        const signals = [];
+        let totalScore = 0;
+        
+        // === SIGNAL 1: VOLUME BREAKOUT (Wyckoff Accumulation) ===
+        // Detects: Volume surge with price compression = smart money accumulating
+        const recentVol = volumes.slice(-10);
+        const avgVol = volumes.slice(-60, -10).reduce((a, b) => a + b, 0) / 50;
+        const currentVol = recentVol[recentVol.length - 1];
+        
+        if (avgVol > 0 && currentVol > avgVol * 2) {
+            // Volume surge detected - check if price is compressed (low volatility)
+            const recentPrices = prices.slice(-10);
+            const priceRange = Math.max(...recentPrices) - Math.min(...recentPrices);
+            const priceRangePercent = priceRange / recentPrices[0];
+            
+            if (priceRangePercent < 0.02) { // Price compressed within 2%
+                signals.push('🔥 ACCUMULATION: Volume surge + price compression');
+                totalScore += 0.25; // 25% confidence boost
+            }
+        }
+        
+        // === SIGNAL 2: GOLDEN CROSS (MA Convergence) ===
+        // Detects: Fast MA crosses above slow MA = trend reversal
+        const fastMA = prices.slice(-10).reduce((a, b) => a + b, 0) / 10;
+        const slowMA = prices.slice(-30).reduce((a, b) => a + b, 0) / 30;
+        const prevFastMA = prices.slice(-11, -1).reduce((a, b) => a + b, 0) / 10;
+        const prevSlowMA = prices.slice(-31, -1).reduce((a, b) => a + b, 0) / 30;
+        
+        if (prevFastMA <= prevSlowMA && fastMA > slowMA) {
+            signals.push('💫 GOLDEN CROSS: Fast MA crossed above slow MA');
+            totalScore += 0.20; // 20% confidence boost
+        }
+        
+        // === SIGNAL 3: BOLLINGER BAND SQUEEZE ===
+        // Detects: Low volatility before explosive move
+        const ma20 = prices.slice(-20).reduce((a, b) => a + b, 0) / 20;
+        const stdDev = Math.sqrt(
+            prices.slice(-20).reduce((sum, price) => sum + Math.pow(price - ma20, 2), 0) / 20
+        );
+        const upperBand = ma20 + (stdDev * 2);
+        const lowerBand = ma20 - (stdDev * 2);
+        const bandWidth = (upperBand - lowerBand) / ma20;
+        
+        if (bandWidth < 0.04) { // Bands squeezed within 4%
+            signals.push('⚡ SQUEEZE: Bollinger Bands tight - breakout imminent');
+            totalScore += 0.15; // 15% confidence boost
+        }
+        
+        // === SIGNAL 4: RSI DIVERGENCE ===
+        // Detects: Price makes lower low but RSI makes higher low = bullish divergence
+        const rsi = this.calculateRSI(prices.slice(-14), 14);
+        const prevRSI = this.calculateRSI(prices.slice(-28, -14), 14);
+        
+        const recentLow = Math.min(...prices.slice(-10));
+        const prevLow = Math.min(...prices.slice(-20, -10));
+        
+        if (recentLow < prevLow && rsi > prevRSI) {
+            signals.push('📈 BULLISH DIVERGENCE: Price lower but RSI higher');
+            totalScore += 0.20; // 20% confidence boost
+        }
+        
+        // === SIGNAL 5: MOMENTUM SURGE ===
+        // Detects: Acceleration in price movement
+        const last5Change = (prices[prices.length - 1] - prices[prices.length - 5]) / prices[prices.length - 5];
+        const prev5Change = (prices[prices.length - 6] - prices[prices.length - 10]) / prices[prices.length - 10];
+        
+        if (last5Change > prev5Change * 2 && last5Change > 0.01) {
+            signals.push('🚀 MOMENTUM SURGE: Acceleration detected');
+            totalScore += 0.15; // 15% confidence boost
+        }
+        
+        // === SIGNAL 6: SUPPORT BOUNCE ===
+        // Detects: Price bouncing off established support level
+        const support = Math.min(...prices.slice(-60));
+        const currentPrice = prices[prices.length - 1];
+        const distanceFromSupport = (currentPrice - support) / support;
+        
+        if (distanceFromSupport < 0.05 && last5Change > 0) {
+            signals.push('💎 SUPPORT BOUNCE: Price bouncing off support');
+            totalScore += 0.10; // 10% confidence boost
+        }
+        
+        const confidence = Math.min(totalScore * 100, 95); // Max 95% confidence
+        
+        return {
+            score: totalScore,
+            signals,
+            confidence,
+            rsi
+        };
+    }
+
+    // 📊 Calculate RSI (Relative Strength Index)
+    calculateRSI(prices, period = 14) {
+        if (prices.length < period + 1) return 50; // Neutral
+        
+        let gains = 0;
+        let losses = 0;
+        
+        for (let i = 1; i <= period; i++) {
+            const change = prices[i] - prices[i - 1];
+            if (change > 0) gains += change;
+            else losses += Math.abs(change);
+        }
+        
+        const avgGain = gains / period;
+        const avgLoss = losses / period;
+        
+        if (avgLoss === 0) return 100; // All gains
+        
+        const rs = avgGain / avgLoss;
+        const rsi = 100 - (100 / (1 + rs));
+        
+        return rsi;
+    }
+
     // 🔥 DETECT SECTOR ROTATION - Find the hot narrative!
     detectSectorRotation() {
         const sectorPerformance = new Map();
@@ -2787,7 +3004,8 @@ class WorldClassTradingAI {
 
     // Portfolio management helpers
     getPositionCount() {
-        return Object.keys(this.state.portfolio).length;
+        // 🐛 FIX: Only count positions with actual holdings (not empty portfolio slots)
+        return Object.values(this.state.portfolio).filter(pos => pos && pos.holdings > 0).length;
     }
 
     hasPosition(market) {
@@ -3725,12 +3943,28 @@ class WorldClassTradingAI {
             // 🧠 ADVANCED AI CHECKS - Make this bot smarter than other AIs!
             console.log(`\n🧠 Running Advanced AI Pre-Flight Checks for ${market}...`);
             
+            // CHECK 0: Elite Signal Detection (NEW!)
+            const eliteSignals = this.scanner.detectEliteSignals(market);
+            console.log(`   0️⃣ Elite Signals: ${eliteSignals.signals.length} detected (${eliteSignals.confidence.toFixed(0)}% confidence)`);
+            if (eliteSignals.signals.length > 0) {
+                eliteSignals.signals.forEach(signal => console.log(`      ✨ ${signal}`));
+            }
+            
+            // Bonus confidence from elite signals
+            const eliteBonus = eliteSignals.confidence > 50;
+            if (eliteBonus) {
+                console.log(`      ✅ ELITE EDGE: High-confidence signals detected (+${eliteSignals.confidence.toFixed(0)}% confidence)`);
+                buyReason += ` | Elite Signals: ${eliteSignals.confidence.toFixed(0)}%`;
+            }
+            
             // CHECK 1: Momentum Confirmation (Prevents buying tops!)
             const momentumCheck = this.scanner.checkMomentumConfirmation(market);
             console.log(`   1️⃣ Momentum: ${momentumCheck.reason}`);
-            if (!momentumCheck.confirmed) {
+            if (!momentumCheck.confirmed && !eliteBonus) {
                 console.log(`      ❌ REJECTED: ${momentumCheck.reason} - Avoiding potential top!`);
-                return; // DON'T BUY - prevents 30% of bad trades!
+                return; // DON'T BUY - unless we have elite signals override
+            } else if (eliteBonus && !momentumCheck.confirmed) {
+                console.log(`      ⚠️  Momentum weak but ELITE SIGNALS override - proceeding!`);
             }
             
             // CHECK 2: Correlation Risk (Max 2 per sector)
@@ -4210,22 +4444,71 @@ class WorldClassTradingAI {
             // 🛑 STOP LOSS ENFORCEMENT: -3% or worse = IMMEDIATE SELL
             else if (profit <= -0.03) {
                 sellScore = 1.0;
-                exitReason = `� STOP LOSS -${Math.abs(profit*100).toFixed(2)}% - CUT LOSSES & FIND BETTER COIN!`;
+                exitReason = `🛑 STOP LOSS -${Math.abs(profit*100).toFixed(2)}% - CUT LOSSES & FIND BETTER COIN!`;
                 console.log(`🛑 ENFORCING STOP LOSS FOR ${market}: ${(profit*100).toFixed(2)}%`);
             }
             // 💎 HOLD TINY LOSSES: Only hold if loss is between 0% and -1% (very close to break-even)
             else if (profit > -0.01) {  // Loss is less than 1%
-                sellScore = 0; // Hold for small recovery
-                if (holdCycles % 50 === 0) {
-                    console.log(`💎 HOLDING ${market} (tiny loss): ${(profit*100).toFixed(2)}% - can recover easily`);
+                // 🧠 OPPORTUNITY COST CHECK: Should we swap to better opportunity?
+                const positionCount = this.getPositionCount();
+                if (positionCount >= this.settings.maxPositions) {
+                    // Portfolio full - check if we should swap this losing position
+                    const bestMarket = this.scanner.findBestMarket(false);
+                    if (bestMarket && bestMarket !== market) {
+                        const opportunityCost = this.scanner.calculateOpportunityCost(market, position, bestMarket);
+                        
+                        if (opportunityCost.shouldSwap) {
+                            sellScore = 1.0;
+                            exitReason = `🔄 OPPORTUNITY SWAP: ${opportunityCost.reason}`;
+                            console.log(`\n💡 INTELLIGENT SWAP DETECTED:`);
+                            console.log(`   Current: ${market} (${(profit*100).toFixed(2)}% P&L, ${(opportunityCost.currentEV*100).toFixed(2)}% EV)`);
+                            console.log(`   Better: ${bestMarket} (${(opportunityCost.newEV*100).toFixed(2)}% EV, +${(opportunityCost.evDifference*100).toFixed(2)}% edge)`);
+                            console.log(`   ✅ Swapping to mathematically superior opportunity!`);
+                        } else {
+                            sellScore = 0; // Hold - no better opportunity
+                            if (holdCycles % 50 === 0) {
+                                console.log(`💎 HOLDING ${market} (tiny loss): ${(profit*100).toFixed(2)}% - ${opportunityCost.reason}`);
+                            }
+                        }
+                    } else {
+                        sellScore = 0; // Hold - no alternative found
+                        if (holdCycles % 50 === 0) {
+                            console.log(`💎 HOLDING ${market} (tiny loss): ${(profit*100).toFixed(2)}% - can recover easily`);
+                        }
+                    }
+                } else {
+                    // Portfolio not full - just hold tiny loss
+                    sellScore = 0;
+                    if (holdCycles % 50 === 0) {
+                        console.log(`💎 HOLDING ${market} (tiny loss): ${(profit*100).toFixed(2)}% - can recover easily`);
+                    }
                 }
             }
-            // 🔄 SWAP AT LOSS: Between -1% and -3%, allow swapping for better opportunities
+            // 🔄 SWAP AT LOSS: Between -1% and -3%, intelligently swap for better opportunities
             else {
-                // Loss is between -1% and -3% - don't force hold, allow market scanner to find better
-                sellScore = 0.3;  // Low score = can be replaced by better opportunity
-                if (holdCycles % 50 === 0) {
-                    console.log(`🔄 ${market} at ${(profit*100).toFixed(2)}% - can swap for better coin`);
+                // Loss is between -1% and -3% - check if better opportunity exists
+                const bestMarket = this.scanner.findBestMarket(false);
+                if (bestMarket && bestMarket !== market) {
+                    const opportunityCost = this.scanner.calculateOpportunityCost(market, position, bestMarket);
+                    
+                    if (opportunityCost.shouldSwap) {
+                        sellScore = 1.0;
+                        exitReason = `🔄 SMART SWAP: ${opportunityCost.reason}`;
+                        console.log(`\n💡 INTELLIGENT SWAP (Moderate Loss):`);
+                        console.log(`   Exiting: ${market} at ${(profit*100).toFixed(2)}% loss (EV: ${(opportunityCost.currentEV*100).toFixed(2)}%)`);
+                        console.log(`   Entering: ${bestMarket} with ${(opportunityCost.newEV*100).toFixed(2)}% EV (+${(opportunityCost.evDifference*100).toFixed(2)}% edge)`);
+                        console.log(`   📊 New momentum: ${(opportunityCost.newMomentum*100).toFixed(2)}% vs current: ${(opportunityCost.currentMomentum*100).toFixed(2)}%`);
+                    } else {
+                        sellScore = 0.3;  // Low score = can be replaced but not urgent
+                        if (holdCycles % 50 === 0) {
+                            console.log(`🔄 ${market} at ${(profit*100).toFixed(2)}% - ${opportunityCost.reason}`);
+                        }
+                    }
+                } else {
+                    sellScore = 0.3;  // No alternative - hold for now
+                    if (holdCycles % 50 === 0) {
+                        console.log(`🔄 ${market} at ${(profit*100).toFixed(2)}% - can swap for better coin`);
+                    }
                 }
             }
         }
